@@ -91,7 +91,6 @@
 
     footer{ text-align:center; color:#fff; font-size:12px; margin-top:24px; opacity:.9; }
 
-    /* Impression (si Ctrl+P ; le PDF “auto” a son propre rendu) */
     @media print {
       body{ background:#fff !important; padding:0; }
       .btn{ display:none !important; }
@@ -101,7 +100,7 @@
     }
   </style>
 
-  <!-- jsPDF depuis CDN (pour générer le PDF) -->
+  <!-- jsPDF pour le PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -153,36 +152,37 @@
   </div>
 
   <script>
-    // ===== Données et génération de l'UI =====
+    // ===== Critères et évaluations =====
     const criteres = [
-      "Sols",
-      "Murs et vitres",
-      "Sanitaires",
-      "Poubelles",
-      "Plans de travail",
-      "Matériel de nettoyage",
-      "Odeurs / ambiance"
+      "Propreté des zones de travail",
+      "Organisation des allées de circulation",
+      "Conformité du stockage",
+      "Qualité du tri des déchets",
+      "Poubelles non débordantes",
+      "Bacs remis à leur place après utilisation",
+      "Chariots remis en place après utilisation"
     ];
-    const valeurs = { "Bien": 2, "Moyen": 1, "Mauvais": 0 };
+    // Remplacement de "Bien" -> "Bon"
+    const valeurs = { "Bon": 2, "Moyen": 1, "Mauvais": 0 };
 
     const container = document.getElementById('criteres');
     const toId = s => s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
 
-    // On mémorise par critère: {file, dataURL}
+    // Mémoire des photos par critère
     const photos = new Map();
 
-    // Génération UI
+    // Génération des blocs critères
     criteres.forEach((c, idx) => {
       const id = toId(c) + '-' + idx;
       const card = document.createElement('div');
       card.className = 'card critere';
       card.innerHTML = `
-        <strong style="display:block; margin-bottom:8px; font-size:16px">${c}</strong>
+        <strong style="display:block; margin-bottom:8px; font-size:16px">${idx+1}. ${c}</strong>
 
         <label for="note-${id}">Évaluation</label>
         <select class="note" id="note-${id}">
           <option value="">-- Choisir --</option>
-          <option value="Bien">Bien</option>
+          <option value="Bon">Bon</option>
           <option value="Moyen">Moyen</option>
           <option value="Mauvais">Mauvais</option>
           <option value="NA">Non applicable</option>
@@ -190,7 +190,7 @@
 
         <div style="height:10px"></div>
 
-        <label for="comment-${id}">Commentaire (optionnel)</label>
+        <label for="comment-${id}">Commentaire (obligatoire si "Mauvais")</label>
         <textarea id="comment-${id}" placeholder="Commentaire / anomalie / action à mener..."></textarea>
 
         <div style="height:10px"></div>
@@ -201,7 +201,7 @@
       `;
       container.appendChild(card);
 
-      // Aperçu
+      // Aperçu photo
       const input = card.querySelector(`#photo-${id}`);
       const previewWrap = card.querySelector(`#preview-${id}`);
       input.addEventListener('change', () => {
@@ -236,14 +236,14 @@
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
     });
 
-    // Collecte
+    // Collecte des données
     function collectData(){
       const auditeur = document.getElementById('auditeur').value.trim();
       const date = document.getElementById('dateAudit').value;
       const zone = document.getElementById('zone').value;
 
       const lignes = [];
-      let total = 0, max = 0, incomplets = false;
+      let total = 0, max = 0, incomplets = false, nNA = 0, nBad = 0;
 
       criteres.forEach((c, idx) => {
         const id = toId(c) + '-' + idx;
@@ -252,6 +252,9 @@
         const photo = photos.get(id) || null;
 
         if (note === "") incomplets = true;
+        if (note === "Mauvais") nBad++;
+        if (note === "NA") nNA++;
+
         if (note !== "" && note !== "NA") { total += valeurs[note]; max += 2; }
 
         lignes.push({ id, critere: c, note, comment, photo });
@@ -264,25 +267,44 @@
 
       return {
         auditeur, date, zone,
-        lignes, total, max, pourcentage, niveau, bg, incomplets
+        lignes, total, max, pourcentage, niveau, bg, incomplets, nNA, nBad
       };
+    }
+
+    // Règle : commentaire obligatoire si "Mauvais"
+    function checkCommentsRequired(d){
+      for (const l of d.lignes){
+        if (l.note === "Mauvais" && !l.comment){
+          alert(`Merci d’ajouter un commentaire pour le critère : "${l.critere}" (note = Mauvais).`);
+          return false;
+        }
+      }
+      return true;
     }
 
     function calculer(){
       const d = collectData();
       if (!d.auditeur || !d.date || !d.zone) { alert("Merci de renseigner le nom de l’auditeur, la date et la zone."); return; }
       if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
+      if (!checkCommentsRequired(d)) return;
       if (d.max === 0) { alert("Tous les critères sont non applicables."); return; }
 
       const res = document.getElementById('resultat');
       res.style.background = getComputedStyle(document.documentElement).getPropertyValue(d.bg).trim();
-      res.innerHTML = `Auditeur : ${d.auditeur}<br>Date : ${d.date}<br>Zone : ${d.zone}<br><br>Score : ${d.pourcentage}%<br>${d.niveau}`;
+      res.innerHTML =
+        `Auditeur : ${d.auditeur}<br>` +
+        `Date : ${d.date}<br>` +
+        `Zone : ${d.zone}<br><br>` +
+        `Score : ${d.pourcentage}% – ${d.niveau}<br>` +
+        `NA : ${d.nNA} &nbsp;|&nbsp; Mauvais : ${d.nBad}`;
     }
 
     // ===== PDF (jsPDF) =====
     async function genererPDF(){
       const d = collectData();
       if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
+      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
+      if (!checkCommentsRequired(d)) return;
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format:'a4' });
@@ -293,7 +315,6 @@
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
       doc.setTextColor(255,58,0);
       doc.text('Audit Propreté – GXO', pageW/2, 18, {align:'center'});
-
       doc.setDrawColor(255,58,0); doc.setLineWidth(0.6);
       doc.line(14, 22, pageW-14, 22);
 
@@ -308,18 +329,18 @@
       doc.setFillColor(255,58,0); doc.setTextColor(255);
       doc.roundedRect(14, y-6, pageW-28, 12, 3,3, 'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(14);
-      doc.text(`Score : ${d.pourcentage}% – ${d.niveau}`, pageW/2, y+2, {align:'center'});
+      doc.text(`Score : ${d.pourcentage}% – ${d.niveau}   |   NA : ${d.nNA}   |   Mauvais : ${d.nBad}`, pageW/2, y+2, {align:'center'});
       y+=18;
       doc.setTextColor(20); doc.setFont('helvetica','normal'); doc.setFontSize(12);
 
       // Détails + photos
       const left = 14, right = pageW - 14, imgMaxW = right-left, imgMaxH = 80;
 
-      for (const l of d.lignes){
+      d.lignes.forEach((l, i) => {
         if (y > pageH - 30) { doc.addPage(); y = 20; }
 
         doc.setFont('helvetica','bold');
-        doc.text(l.critere, left, y); y+=6;
+        doc.text(`${i+1}. ${l.critere}`, left, y); y+=6;
 
         doc.setFont('helvetica','normal');
         doc.text(`Évaluation : ${l.note || '-'}`, left, y);
@@ -334,7 +355,7 @@
             const w = imgMaxW;
             const h = Math.min(imgMaxH, w * 0.75);
             if (y + h > pageH - 20) { doc.addPage(); y = 20; }
-            // jsPDF devine souvent le format à partir du dataURL (png/jpeg)
+            // jsPDF déduira le format si dataURL PNG/JPEG ; forçons 'JPEG' pour compat.
             doc.addImage(l.photo.dataURL, 'JPEG', left, y, w, h);
             y += h + 10;
           }catch(e){
@@ -342,7 +363,7 @@
           }
         }
         y += 2;
-      }
+      });
 
       doc.save(`Audit_GXO_${d.date}_${d.zone}.pdf`);
     }
@@ -351,9 +372,11 @@
     function exportCSV(){
       const d = collectData();
       if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
+      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
+      if (!checkCommentsRequired(d)) return;
 
       const headers = [
-        'Auditeur','Date','Zone','Score(%)','Niveau',
+        'Auditeur','Date','Zone','Score(%)','Niveau','NA','Mauvais',
         'Critère','Évaluation','Commentaire','Fichier'
       ];
       const rows = [];
@@ -361,9 +384,8 @@
       for (const l of d.lignes){
         const fileName = l.photo?.file?.name || '';
         rows.push([
-          d.auditeur, d.date, d.zone, d.pourcentage, d.niveau,
-          l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '),
-          fileName
+          d.auditeur, d.date, d.zone, d.pourcentage, d.niveau, d.nNA, d.nBad,
+          l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '), fileName
         ]);
       }
 
@@ -379,3 +401,4 @@
   </script>
 </body>
 </html>
+
