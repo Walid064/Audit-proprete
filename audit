@@ -1,181 +1,329 @@
-<!DOCTYPE html><html lang="fr">
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Audit Propreté GXO</title>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #003A8F, #7AC143);
-      margin: 0;
-      padding: 20px;
+    /* ================================
+       Variables de la charte GXO
+       ================================ */
+    :root{
+      --gxo-orange:#FF3A00;   /* GXO Orange - source: BrandColorCode & Brandfetch */
+      --gxo-white:#FFFFFF;
+      --text:#111827;         /* Gris très foncé lisible */
+      --muted:#6B7280;        /* Gris secondaire */
+      --border:#E5E7EB;       /* Gris clair pour bordures */
+      --bg:#F8FAFC;           /* Gris très clair */
+      --ok:#22C55E;           /* Vert succès (lisibilité résultat) */
+      --warn:#F59E0B;         /* Orange/ambre pour "Acceptable" */
+      --bad:#DC2626;          /* Rouge pour "Insuffisant" */
+      --radius:12px;
+      --shadow:0 4px 12px rgba(0,0,0,.12);
     }
-    h1 {
-      text-align: center;
-      color: white;
+
+    /* ================================
+       Base
+       ================================ */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--gxo-orange) 0%, #FFB39F 30%, var(--gxo-white) 100%);
+      background-attachment: fixed;
+      padding: 32px 16px;
+    }
+
+    .container{
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      gap:16px;
       margin-bottom: 20px;
     }
-    .box {
-      background: white;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    .logo{
+      height: 36px; 
+      width: auto;
     }
-    .row {
-      display: flex;
+
+    h1{
+      text-align:center;
+      color:#fff;
+      margin: 0 0 20px 0;
+      text-shadow: 0 1px 2px rgba(0,0,0,.25);
+      letter-spacing: .3px;
+    }
+
+    .card{
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .row{
+      display:flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
-    label {
-      font-weight: bold;
+
+    label{
+      display:block;
+      font-weight: 700;
       font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--text);
     }
-    input, select {
-      padding: 10px;
+
+    input, select{
+      width: 100%;
+      padding: 12px 10px;
       font-size: 14px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
     }
-    .critere {
-      margin-bottom: 10px;
+    input::placeholder{ color:#9CA3AF; }
+    input:focus, select:focus{
+      border-color: var(--gxo-orange);
+      box-shadow: 0 0 0 3px rgba(255,58,0,.18);
+      background: #fff;
     }
-    button {
+
+    .critere{ margin-bottom: 10px; }
+
+    .btn{
       width: 100%;
-      padding: 15px;
+      padding: 14px 16px;
       font-size: 16px;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 10px;
       cursor: pointer;
       margin-top: 10px;
-      color: white;
+      font-weight: 700;
+      transition: transform .02s ease, filter .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
     }
-    .calc { background: #003A8F; }
-    .pdf { background: #7AC143; }
-    #resultat {
-      margin-top: 15px;
+    .btn:active{ transform: scale(.998); }
+
+    .btn-primary{
+      background: var(--gxo-orange);
+      color: #fff;
+    }
+    .btn-primary:hover{ filter: brightness(0.95); }
+
+    .btn-outline{
+      background: #fff;
+      color: var(--gxo-orange);
+      border-color: var(--gxo-orange);
+    }
+    .btn-outline:hover{
+      background: #FFF3EF;
+    }
+
+    #resultat{
+      margin-top: 16px;
       padding: 20px;
-      border-radius: 12px;
+      border-radius: var(--radius);
       text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: var(--shadow);
     }
+
+    .helper{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    footer{
+      text-align:center;
+      color:#fff;
+      font-size: 12px;
+      margin-top: 24px;
+      opacity:.9;
+    }
+
+    /* Impression (PDF) */
     @media print {
-      button { display: none; }
+      body{ background: #fff !important; padding: 0; }
+      header, .btn { display: none !important; }
+      .card{ box-shadow: none !important; border-color: #ddd; }
+      #resultat{ color: #000; border: 1px solid #ddd; }
     }
   </style>
 </head>
-<body><h1>Audit Propreté – GXO</h1><!-- INFOS AUDIT --><div class="box">
-  <div class="row">
-    <div>
-      <label>Nom de l’auditeur</label>
-      <input type="text" id="auditeur" placeholder="Ex : Ahmed Benali">
-    </div><div>
-  <label>Date de l’audit</label>
-  <input type="date" id="dateAudit">
-</div>
+<body>
+  <div class="container">
 
-<div>
-  <label>Zone</label>
-  <select id="zone">
-    <option value="">-- Sélectionner la zone --</option>
-    <option value="ND4">ND4</option>
-    <option value="CD5">CD5</option>
-    <option value="RIU">RIU</option>
-    <option value="ECOM">ECOM</option>
-  </select>
-</div>
+    <!-- Si tu ajoutes le logo officiel dans /assets/gxo-logo.svg, il s'affichera -->
+    <header>
+      <!-- Remplace src par le chemin de ton logo. Voir note plus bas. -->
+      <!-- <img src="assets/gxo-logo.svg" alt="GXO" class="logo"> -->
+    </header>
+
+    <h1>Audit Propreté – GXO</h1>
+
+    <!-- INFOS AUDIT -->
+    <div class="card">
+      <div class="row">
+
+        <div>
+          <label for="auditeur">Nom de l’auditeur</label>
+          <input type="text" id="auditeur" placeholder="Ex : Walid Adjout">
+          <div class="helper">Saisir le prénom + nom de l’auditeur.</div>
+        </div>
+
+        <div>
+          <label for="dateAudit">Date de l’audit</label>
+          <input type="date" id="dateAudit">
+        </div>
+
+        <div>
+          <label for="zone">Zone</label>
+          <select id="zone">
+            <option value="">-- Sélectionner la zone --</option>
+            <option value="ND4">ND4</option>
+            <option value="CD5">CD5</option>
+            <option value="RIU">RIU</option>
+            <option value="ECOM">ECOM</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CRITERES -->
+    <div id="criteres"></div>
+
+    <button class="btn btn-primary" onclick="calculer()">Calculer le score</button>
+    <button class="btn btn-outline" onclick="window.print()">Exporter en PDF</button>
+
+    <div id="resultat" aria-live="polite"></div>
+
+    <footer>
+      Charte couleur appliquée : GXO Orange #FF3A00 (source : BrandColorCode / Brandfetch)
+    </footer>
 
   </div>
-</div><!-- CRITERES --><div id="criteres"></div><button class="calc" onclick="calculer()">Calculer le score</button> <button class="pdf" onclick="window.print()">Exporter en PDF</button>
 
-<div id="resultat"></div><script>
-  const criteres = [
-    "Sols",
-    "Murs et vitres",
-    "Sanitaires",
-    "Poubelles",
-    "Plans de travail",
-    "Matériel de nettoyage",
-    "Odeurs / ambiance"
-  ];
+  <script>
+    // Critères d'audit
+    const criteres = [
+      "Sols",
+      "Murs et vitres",
+      "Sanitaires",
+      "Poubelles",
+      "Plans de travail",
+      "Matériel de nettoyage",
+      "Odeurs / ambiance"
+    ];
 
-  const valeurs = {
-    "Bien": 2,
-    "Moyen": 1,
-    "Mauvais": 0
-  };
+    // Valeurs de scoring
+    const valeurs = { "Bien": 2, "Moyen": 1, "Mauvais": 0 };
 
-  const container = document.getElementById('criteres');
+    // Conteneur
+    const container = document.getElementById('criteres');
 
-  criteres.forEach(c => {
-    const div = document.createElement('div');
-    div.className = 'box critere';
-    div.innerHTML = `
-      <strong>${c}</strong><br><br>
-      <label>Évaluation</label>
-      <select class="note">
-        <option value="">-- Choisir --</option>
-        <option value="Bien">Bien</option>
-        <option value="Moyen">Moyen</option>
-        <option value="Mauvais">Mauvais</option>
-        <option value="NA">Non applicable</option>
-      </select>
-      <br><br>
-      <label>Photo</label>
-      <input type="file" accept="image/*">
-    `;
-    container.appendChild(div);
-  });
+    // Génération dynamique des blocs critères
+    criteres.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'card critere';
+      div.innerHTML = `
+        <strong style="display:block; margin-bottom:8px;">${c}</strong>
 
-  function calculer() {
-    const auditeur = document.getElementById('auditeur').value;
-    const date = document.getElementById('dateAudit').value;
-    const zone = document.getElementById('zone').value;
+        <label>Évaluation</label>
+        <select class="note">
+          <option value="">-- Choisir --</option>
+          <option value="Bien">Bien</option>
+          <option value="Moyen">Moyen</option>
+          <option value="Mauvais">Mauvais</option>
+          <option value="NA">Non applicable</option>
+        </select>
 
-    if (!auditeur || !date || !zone) {
-      alert("Merci de renseigner le nom de l’auditeur, la date et la zone");
-      return;
-    }
+        <div style="height:10px"></div>
 
-    const notes = document.querySelectorAll('.note');
-    let total = 0;
-    let max = 0;
+        <label>Photo</label>
+        <input type="file" accept="image/*">
+      `;
+      container.appendChild(div);
+    });
 
-    for (let n of notes) {
-      if (n.value === "") {
-        alert("Merci de remplir toutes les évaluations");
+    // Préremplir la date du jour
+    document.addEventListener('DOMContentLoaded', () => {
+      const dateInput = document.getElementById('dateAudit');
+      if (!dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+      }
+    });
+
+    // Calcul du score
+    function calculer() {
+      const auditeur = document.getElementById('auditeur').value.trim();
+      const date = document.getElementById('dateAudit').value;
+      const zone = document.getElementById('zone').value;
+
+      if (!auditeur || !date || !zone) {
+        alert("Merci de renseigner le nom de l’auditeur, la date et la zone.");
         return;
       }
-      if (n.value !== "NA") {
-        total += valeurs[n.value];
-        max += 2;
+
+      const notes = document.querySelectorAll('.note');
+      let total = 0;
+      let max = 0;
+
+      for (let n of notes) {
+        if (n.value === "") {
+          alert("Merci de remplir toutes les évaluations.");
+          return;
+        }
+        if (n.value !== "NA") {
+          total += valeurs[n.value];
+          max += 2;
+        }
       }
+
+      if (max === 0) {
+        alert("Tous les critères sont non applicables.");
+        return;
+      }
+
+      const pourcentage = Math.round((total / max) * 100);
+      const res = document.getElementById('resultat');
+
+      // Couleur du panneau résultat (lisible + sens)
+      let bg = getComputedStyle(document.documentElement).getPropertyValue('--bad');  // rouge par défaut
+      let texte = 'Insuffisant';
+
+      if (pourcentage >= 80) {
+        bg = getComputedStyle(document.documentElement).getPropertyValue('--gxo-orange'); // Orange GXO pour "Très bon"
+        texte = 'Très bon';
+      } else if (pourcentage >= 60) {
+        bg = getComputedStyle(document.documentElement).getPropertyValue('--warn'); // Ambre
+        texte = 'Acceptable';
+      }
+
+      res.style.background = bg.trim();
+      res.innerHTML =
+        `Auditeur : ${auditeur}<br>` +
+        `Date : ${date}<br>` +
+        `Zone : ${zone}<br><br>` +
+        `Score : ${pourcentage}%<br>${texte}`;
     }
-
-    if (max === 0) {
-      alert("Tous les critères sont non applicables");
-      return;
-    }
-
-    const pourcentage = Math.round((total / max) * 100);
-    const res = document.getElementById('resultat');
-
-    let couleur = '#e74c3c';
-    let texte = 'Insuffisant';
-
-    if (pourcentage >= 80) {
-      couleur = '#7AC143';
-      texte = 'Très bon';
-    } else if (pourcentage >= 60) {
-      couleur = '#f39c12';
-      texte = 'Acceptable';
-    }
-
-    res.style.background = couleur;
-    res.innerHTML = `\n Auditeur : ${auditeur}<br>\n Date : ${date}<br>\n Zone : ${zone}<br><br>\n Score : ${pourcentage}%<br>${texte}\n `;
-  }
-</script></body>
+  </script>
+</body>
 </html>
+``
