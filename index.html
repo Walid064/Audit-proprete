@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Audit Propreté GXO</title>
 
-  <!-- ===== Styles (charte + UI pro) ===== -->
   <style>
     :root{
       --gxo-orange:#FF3A00;
@@ -63,7 +62,7 @@
     .btn:active{ transform:scale(.998); }
     .btn-primary{ background:var(--gxo-orange); color:#fff; }
     .btn-primary:hover{ filter:brightness(0.95); }
-    .btn-outline{ background:#fff; color:var(--gxo-orange); border-color:var(--gxo-orange); }
+    .btn-outline{ background:#fff; color:var(--gxo-orange); border-color: var(--gxo-orange); }
     .btn-outline:hover{ background:#FFF3EF; }
     .btn-bar{ display:grid; gap:10px; grid-template-columns:1fr; }
     @media (min-width:720px){ .btn-bar{ grid-template-columns:1fr 1fr 1fr; } }
@@ -92,7 +91,7 @@
 
     footer{ text-align:center; color:#fff; font-size:12px; margin-top:24px; opacity:.9; }
 
-    /* Impression (PDF via Ctrl+P – le PDF “auto” a son propre rendu) */
+    /* Impression (si Ctrl+P ; le PDF “auto” a son propre rendu) */
     @media print {
       body{ background:#fff !important; padding:0; }
       .btn{ display:none !important; }
@@ -102,9 +101,8 @@
     }
   </style>
 
-  <!-- ===== Librairie PDF ===== -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
-          integrity="sha256-+f2dQO0w6f8vQrc6Ww6Hh4nTkq4tO7KZbL6q5G2z8Ww=" crossorigin="anonymous"></script>
+  <!-- jsPDF depuis CDN (pour générer le PDF) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -147,15 +145,10 @@
       <button class="btn btn-outline" onclick="exportCSV()">Exporter CSV</button>
     </div>
 
-    <!-- Cloud (Firebase) -->
-    <div class="btn-bar">
-      <button class="btn btn-primary" onclick="enregistrerCloud()">Enregistrer dans le Cloud (photos + audit)</button>
-    </div>
-
     <div id="resultat" aria-live="polite"></div>
 
     <footer>
-      Charte couleur appliquée : GXO Orange #FF3A00. PDF généré côté navigateur avec jsPDF.
+      Charte couleur GXO (#FF3A00). PDF et CSV générés côté navigateur.
     </footer>
   </div>
 
@@ -178,6 +171,7 @@
     // On mémorise par critère: {file, dataURL}
     const photos = new Map();
 
+    // Génération UI
     criteres.forEach((c, idx) => {
       const id = toId(c) + '-' + idx;
       const card = document.createElement('div');
@@ -207,7 +201,7 @@
       `;
       container.appendChild(card);
 
-      // Gestion de l'aperçu
+      // Aperçu
       const input = card.querySelector(`#photo-${id}`);
       const previewWrap = card.querySelector(`#preview-${id}`);
       input.addEventListener('change', () => {
@@ -242,7 +236,7 @@
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
     });
 
-    // Récupérer toutes les données de l'écran
+    // Collecte
     function collectData(){
       const auditeur = document.getElementById('auditeur').value.trim();
       const date = document.getElementById('dateAudit').value;
@@ -260,7 +254,7 @@
         if (note === "") incomplets = true;
         if (note !== "" && note !== "NA") { total += valeurs[note]; max += 2; }
 
-        lignes.push({ id, critere: c, note, comment, photo }); // photo: {file, dataURL} ou null
+        lignes.push({ id, critere: c, note, comment, photo });
       });
 
       const pourcentage = max > 0 ? Math.round((total / max) * 100) : 0;
@@ -297,7 +291,7 @@
 
       // En-tête
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.setTextColor(255,58,0); // GXO Orange
+      doc.setTextColor(255,58,0);
       doc.text('Audit Propreté – GXO', pageW/2, 18, {align:'center'});
 
       doc.setDrawColor(255,58,0); doc.setLineWidth(0.6);
@@ -318,11 +312,10 @@
       y+=18;
       doc.setTextColor(20); doc.setFont('helvetica','normal'); doc.setFontSize(12);
 
-      // Détails par critère + photo
+      // Détails + photos
       const left = 14, right = pageW - 14, imgMaxW = right-left, imgMaxH = 80;
 
       for (const l of d.lignes){
-        // Saut de page si besoin
         if (y > pageH - 30) { doc.addPage(); y = 20; }
 
         doc.setFont('helvetica','bold');
@@ -331,23 +324,18 @@
         doc.setFont('helvetica','normal');
         doc.text(`Évaluation : ${l.note || '-'}`, left, y);
         if (l.comment) {
-          // Multi-line texte
           const lines = doc.splitTextToSize(`Commentaire : ${l.comment}`, imgMaxW);
           doc.text(lines, left, y+6);
           y += 6 + lines.length*6;
         } else { y += 8; }
 
-        // Image si présente (dataURL)
         if (l.photo && l.photo.dataURL){
-          // Calcule ratio
-          const img = l.photo.dataURL;
           try{
-            // On insère sous forme d'image (jsPDF gère base64 directement)
-            // On contraint la taille
             const w = imgMaxW;
-            const h = Math.min(imgMaxH, w * 0.75); // ratio approx 4:3
+            const h = Math.min(imgMaxH, w * 0.75);
             if (y + h > pageH - 20) { doc.addPage(); y = 20; }
-            doc.addImage(img, 'JPEG', left, y, w, h); // format deviné, JPEG par défaut
+            // jsPDF devine souvent le format à partir du dataURL (png/jpeg)
+            doc.addImage(l.photo.dataURL, 'JPEG', left, y, w, h);
             y += h + 10;
           }catch(e){
             doc.setTextColor(200,0,0); doc.text('(Image non intégrée)', left, y); doc.setTextColor(20); y+=8;
@@ -357,27 +345,25 @@
       }
 
       doc.save(`Audit_GXO_${d.date}_${d.zone}.pdf`);
-      // jsPDF: client-side PDF (images via dataURL)  [5](https://github.com/parallax/jsPDF)[6](https://artskydj.github.io/jsPDF/docs/module-addImage.html)
     }
 
     // ===== CSV =====
-    function exportCSV(uploadMap){
+    function exportCSV(){
       const d = collectData();
       if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
 
       const headers = [
         'Auditeur','Date','Zone','Score(%)','Niveau',
-        'Critère','Évaluation','Commentaire','Fichier','URL'
+        'Critère','Évaluation','Commentaire','Fichier'
       ];
       const rows = [];
 
       for (const l of d.lignes){
         const fileName = l.photo?.file?.name || '';
-        const url = uploadMap?.get(l.id) || ''; // URL de téléchargement Firebase si dispo
         rows.push([
           d.auditeur, d.date, d.zone, d.pourcentage, d.niveau,
           l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '),
-          fileName, url
+          fileName
         ]);
       }
 
@@ -389,101 +375,6 @@
       a.href = URL.createObjectURL(blob);
       a.download = `Audit_GXO_${d.date}_${d.zone}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
-    }
-
-    // ====== Firebase (Cloud) – à activer avec votre configuration ======
-    // 1) Crée un projet sur https://console.firebase.google.com/
-    // 2) Ajoute une appli Web et récupère le snippet "firebaseConfig"
-    // 3) Dans la console Firebase :
-    //    - Active Authentification > Méthodes de connexion > Anonyme
-    //    - Crée Firestore (mode production)
-    //    - Active Storage (règles: écriture réservée aux utilisateurs authentifiés)
-    // Docs: ajout Firebase Web, Auth anonyme, Storage upload, Firestore addDoc  [1](https://firebase.google.com/docs/web/setup)[2](https://firebase.google.com/docs/auth/web/anonymous-auth)[3](https://firebase.google.com/docs/storage/web/upload-files)[4](https://firebase.google.com/docs/firestore/manage-data/add-data)
-
-    // >>>>> COLLER ICI VOTRE CONFIG <<<<<
-    // Exemple:
-    // window.FIREBASE_CONFIG = {
-    //   apiKey: "xxxxx",
-    //   authDomain: "xxxxx.firebaseapp.com",
-    //   projectId: "xxxxx",
-    //   storageBucket: "xxxxx.appspot.com",
-    //   messagingSenderId: "xxxxx",
-    //   appId: "xxxxx"
-    // };
-
-  </script>
-
-  <!-- Import Firebase (modules ESM depuis le CDN gstatic) uniquement si config présente -->
-  <script type="module">
-    if (window.FIREBASE_CONFIG) {
-      // SDK v9+ modular
-      // Guide d'installation Web: initializeApp, Auth/Storage/Firestore  [1](https://firebase.google.com/docs/web/setup)
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-      import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-      import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
-
-      const app = initializeApp(window.FIREBASE_CONFIG);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-      const storage = getStorage(app);
-
-      // Connexion anonyme (pour autoriser les écritures)  [2](https://firebase.google.com/docs/auth/web/anonymous-auth)
-      signInAnonymously(auth).catch(console.error);
-
-      // Fonction globale appelée par le bouton
-      window.enregistrerCloud = async function(){
-        const d = collectData();
-        if (!d.auditeur || !d.date || !d.zone){ alert("Complète d’abord Auditeur / Date / Zone."); return; }
-        if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
-        if (d.max === 0) { alert("Tous les critères sont non applicables."); return; }
-
-        const timestamp = Date.now();
-        const folder = `audits/${d.date}_${d.zone}_${timestamp}`;
-        const uploadMap = new Map(); // idCritere -> url
-
-        // 1) Upload des photos dans Storage (uploadBytes puis getDownloadURL)  [3](https://firebase.google.com/docs/storage/web/upload-files)
-        for (const l of d.lignes){
-          if (l.photo && l.photo.file){
-            const cleanName = l.photo.file.name.replace(/[^\w\.\-]+/g,'_');
-            const path = `${folder}/${l.id}_${cleanName}`;
-            const r = ref(storage, path);
-            await uploadBytes(r, l.photo.file);
-            const url = await getDownloadURL(r);
-            uploadMap.set(l.id, url);
-          }
-        }
-
-        // 2) Enregistrer l’audit dans Firestore (addDoc)  [4](https://firebase.google.com/docs/firestore/manage-data/add-data)
-        const detail = d.lignes.map(l => ({
-          id: l.id,
-          critere: l.critere,
-          note: l.note || '',
-          comment: l.comment || '',
-          photoURL: uploadMap.get(l.id) || null
-        }));
-
-        const docRef = await addDoc(collection(db, 'audits'), {
-          auditeur: d.auditeur,
-          date: d.date,
-          zone: d.zone,
-          score: d.pourcentage,
-          niveau: d.niveau,
-          createdAt: serverTimestamp(),
-          folder,
-          detail
-        });
-
-        alert(`Audit enregistré (ID: ${docRef.id}).\nLes photos sont stockées et liées à l’audit.`);
-
-        // 3) Proposer CSV avec URLs Cloud
-        exportCSV(uploadMap);
-      };
-    } else {
-      // Si la config n'est pas fournie, on désactive juste la partie Cloud
-      window.enregistrerCloud = function(){
-        alert("Configuration Firebase manquante.\n\nPour activer la sauvegarde cloud :\n1) Crée un projet Firebase (console.firebase.google.com)\n2) Copie le snippet 'firebaseConfig'\n3) Colle-le dans index.html (section // >>>>> COLLER ICI VOTRE CONFIG <<<<<)\n4) Recharge la page.");
-      };
     }
   </script>
 </body>
