@@ -5,181 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Audit Propreté GXO</title>
 
+  <!-- ===== Styles (charte + UI pro) ===== -->
   <style>
-    /* ================================
-       Variables de la charte GXO
-       ================================ */
     :root{
-      --gxo-orange:#FF3A00;   /* GXO Orange - source: BrandColorCode & Brandfetch */
+      --gxo-orange:#FF3A00;
       --gxo-white:#FFFFFF;
-      --text:#111827;         /* Gris très foncé lisible */
-      --muted:#6B7280;        /* Gris secondaire */
-      --border:#E5E7EB;       /* Gris clair pour bordures */
-      --bg:#F8FAFC;           /* Gris très clair */
-      --ok:#22C55E;           /* Vert succès (lisibilité résultat) */
-      --warn:#F59E0B;         /* Orange/ambre pour "Acceptable" */
-      --bad:#DC2626;          /* Rouge pour "Insuffisant" */
+      --text:#111827;
+      --muted:#6B7280;
+      --border:#E5E7EB;
+      --bg:#F8FAFC;
+      --ok:#22C55E;
+      --warn:#F59E0B;
+      --bad:#DC2626;
       --radius:12px;
       --shadow:0 4px 12px rgba(0,0,0,.12);
+      --container: 960px;
     }
-
-    /* ================================
-       Base
-       ================================ */
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
       font-family: Arial, Helvetica, sans-serif;
-      color: var(--text);
+      color:var(--text);
       background: linear-gradient(135deg, var(--gxo-orange) 0%, #FFB39F 30%, var(--gxo-white) 100%);
       background-attachment: fixed;
-      padding: 32px 16px;
+      padding:32px 16px;
     }
-
-    .container{
-      max-width: 920px;
-      margin: 0 auto;
-    }
-
-    header{
-      display:flex;
-      align-items:center;
-      gap:16px;
-      margin-bottom: 20px;
-    }
-    .logo{
-      height: 36px; 
-      width: auto;
-    }
+    .container{ max-width: var(--container); margin:0 auto; }
 
     h1{
-      text-align:center;
-      color:#fff;
-      margin: 0 0 20px 0;
-      text-shadow: 0 1px 2px rgba(0,0,0,.25);
-      letter-spacing: .3px;
+      text-align:center; color:#fff; margin:0 0 20px 0;
+      text-shadow: 0 1px 2px rgba(0,0,0,.25); letter-spacing:.3px;
     }
-
     .card{
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
+      background:#fff; border-radius:var(--radius); padding:16px;
+      margin-bottom:16px; box-shadow:var(--shadow); border:1px solid var(--border);
+    }
+    .row{ display:flex; flex-direction:column; gap:12px; }
+    label{ display:block; font-weight:700; font-size:14px; margin-bottom:6px; color:var(--text); }
+    input, select, textarea{
+      width:100%; padding:12px 10px; font-size:14px; border-radius:10px;
+      border:1px solid var(--border); background:var(--bg); outline:none;
+      transition:border-color .2s, box-shadow .2s, background .2s;
+    }
+    textarea{ min-height:80px; resize:vertical; }
+    input::placeholder, textarea::placeholder{ color:#9CA3AF; }
+    input:focus, select:focus, textarea:focus{
+      border-color:var(--gxo-orange); box-shadow:0 0 0 3px rgba(255,58,0,.18); background:#fff;
     }
 
-    .row{
-      display:flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    label{
-      display:block;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 6px;
-      color: var(--text);
-    }
-
-    input, select{
-      width: 100%;
-      padding: 12px 10px;
-      font-size: 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      outline: none;
-      transition: border-color .2s, box-shadow .2s, background .2s;
-    }
-    input::placeholder{ color:#9CA3AF; }
-    input:focus, select:focus{
-      border-color: var(--gxo-orange);
-      box-shadow: 0 0 0 3px rgba(255,58,0,.18);
-      background: #fff;
-    }
-
-    .critere{ margin-bottom: 10px; }
-
+    .critere{ margin-bottom:10px; }
     .btn{
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 16px;
-      border: 1px solid transparent;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 10px;
-      font-weight: 700;
-      transition: transform .02s ease, filter .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+      width:100%; padding:14px 16px; font-size:16px; border:1px solid transparent;
+      border-radius:10px; cursor:pointer; margin-top:10px; font-weight:700;
+      transition:transform .02s ease, filter .2s ease, background .2s ease, color .2s ease;
     }
-    .btn:active{ transform: scale(.998); }
-
-    .btn-primary{
-      background: var(--gxo-orange);
-      color: #fff;
-    }
-    .btn-primary:hover{ filter: brightness(0.95); }
-
-    .btn-outline{
-      background: #fff;
-      color: var(--gxo-orange);
-      border-color: var(--gxo-orange);
-    }
-    .btn-outline:hover{
-      background: #FFF3EF;
-    }
+    .btn:active{ transform:scale(.998); }
+    .btn-primary{ background:var(--gxo-orange); color:#fff; }
+    .btn-primary:hover{ filter:brightness(0.95); }
+    .btn-outline{ background:#fff; color:var(--gxo-orange); border-color:var(--gxo-orange); }
+    .btn-outline:hover{ background:#FFF3EF; }
+    .btn-bar{ display:grid; gap:10px; grid-template-columns:1fr; }
+    @media (min-width:720px){ .btn-bar{ grid-template-columns:1fr 1fr 1fr; } }
 
     #resultat{
-      margin-top: 16px;
-      padding: 20px;
-      border-radius: var(--radius);
-      text-align: center;
-      font-size: 18px;
-      font-weight: 700;
-      color: #fff;
-      box-shadow: var(--shadow);
+      margin-top:16px; padding:20px; border-radius:var(--radius);
+      text-align:center; font-size:18px; font-weight:700; color:#fff; box-shadow:var(--shadow);
     }
+    .helper{ font-size:12px; color:var(--muted); margin-top:6px; }
 
-    .helper{
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
+    /* Aperçu photo */
+    .preview-wrap{ margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; }
+    .preview{
+      position:relative; width:220px; aspect-ratio:4/3;
+      border:1px solid var(--border); border-radius:8px; overflow:hidden;
+      background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.06); cursor:zoom-in;
     }
-
-    footer{
-      text-align:center;
-      color:#fff;
-      font-size: 12px;
-      margin-top: 24px;
-      opacity:.9;
+    .preview img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .preview .legend{
+      position:absolute; left:0; right:0; bottom:0;
+      background:linear-gradient(transparent, rgba(0,0,0,.55));
+      color:#fff; font-size:12px; padding:6px 8px;
+      display:flex; justify-content:space-between; gap:6px;
     }
+    .legend .status{ font-weight:700; }
 
-    /* Impression (PDF) */
+    footer{ text-align:center; color:#fff; font-size:12px; margin-top:24px; opacity:.9; }
+
+    /* Impression (PDF via Ctrl+P – le PDF “auto” a son propre rendu) */
     @media print {
-      body{ background: #fff !important; padding: 0; }
-      header, .btn { display: none !important; }
-      .card{ box-shadow: none !important; border-color: #ddd; }
-      #resultat{ color: #000; border: 1px solid #ddd; }
+      body{ background:#fff !important; padding:0; }
+      .btn{ display:none !important; }
+      .card{ box-shadow:none !important; border-color:#ddd; }
+      #resultat{ color:#000; border:1px solid #ddd; }
+      .preview{ border-color:#ccc; }
     }
   </style>
+
+  <!-- ===== Librairie PDF ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
+          integrity="sha256-+f2dQO0w6f8vQrc6Ww6Hh4nTkq4tO7KZbL6q5G2z8Ww=" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="container">
-
-    <!-- Si tu ajoutes le logo officiel dans /assets/gxo-logo.svg, il s'affichera -->
-    <header>
-      <!-- Remplace src par le chemin de ton logo. Voir note plus bas. -->
-      <!-- <img src="assets/gxo-logo.svg" alt="GXO" class="logo"> -->
-    </header>
-
     <h1>Audit Propreté – GXO</h1>
 
-    <!-- INFOS AUDIT -->
+    <!-- IDENTIFICATION -->
     <div class="card">
       <div class="row">
-
         <div>
           <label for="auditeur">Nom de l’auditeur</label>
           <input type="text" id="auditeur" placeholder="Ex : Walid Adjout">
@@ -201,26 +134,33 @@
             <option value="ECOM">ECOM</option>
           </select>
         </div>
-
       </div>
     </div>
 
     <!-- CRITERES -->
     <div id="criteres"></div>
 
-    <button class="btn btn-primary" onclick="calculer()">Calculer le score</button>
-    <button class="btn btn-outline" onclick="window.print()">Exporter en PDF</button>
+    <!-- ACTIONS -->
+    <div class="btn-bar">
+      <button class="btn btn-primary" onclick="calculer()">Calculer le score</button>
+      <button class="btn btn-outline" onclick="genererPDF()">Générer le PDF</button>
+      <button class="btn btn-outline" onclick="exportCSV()">Exporter CSV</button>
+    </div>
+
+    <!-- Cloud (Firebase) -->
+    <div class="btn-bar">
+      <button class="btn btn-primary" onclick="enregistrerCloud()">Enregistrer dans le Cloud (photos + audit)</button>
+    </div>
 
     <div id="resultat" aria-live="polite"></div>
 
     <footer>
-      Charte couleur appliquée : GXO Orange #FF3A00 (source : BrandColorCode / Brandfetch)
+      Charte couleur appliquée : GXO Orange #FF3A00. PDF généré côté navigateur avec jsPDF.
     </footer>
-
   </div>
 
   <script>
-    // Critères d'audit
+    // ===== Données et génération de l'UI =====
     const criteres = [
       "Sols",
       "Murs et vitres",
@@ -230,22 +170,23 @@
       "Matériel de nettoyage",
       "Odeurs / ambiance"
     ];
-
-    // Valeurs de scoring
     const valeurs = { "Bien": 2, "Moyen": 1, "Mauvais": 0 };
 
-    // Conteneur
     const container = document.getElementById('criteres');
+    const toId = s => s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
 
-    // Génération dynamique des blocs critères
-    criteres.forEach(c => {
-      const div = document.createElement('div');
-      div.className = 'card critere';
-      div.innerHTML = `
-        <strong style="display:block; margin-bottom:8px;">${c}</strong>
+    // On mémorise par critère: {file, dataURL}
+    const photos = new Map();
 
-        <label>Évaluation</label>
-        <select class="note">
+    criteres.forEach((c, idx) => {
+      const id = toId(c) + '-' + idx;
+      const card = document.createElement('div');
+      card.className = 'card critere';
+      card.innerHTML = `
+        <strong style="display:block; margin-bottom:8px; font-size:16px">${c}</strong>
+
+        <label for="note-${id}">Évaluation</label>
+        <select class="note" id="note-${id}">
           <option value="">-- Choisir --</option>
           <option value="Bien">Bien</option>
           <option value="Moyen">Moyen</option>
@@ -255,75 +196,295 @@
 
         <div style="height:10px"></div>
 
-        <label>Photo</label>
-        <input type="file" accept="image/*">
+        <label for="comment-${id}">Commentaire (optionnel)</label>
+        <textarea id="comment-${id}" placeholder="Commentaire / anomalie / action à mener..."></textarea>
+
+        <div style="height:10px"></div>
+
+        <label for="photo-${id}">Photo</label>
+        <input type="file" accept="image/*" id="photo-${id}">
+        <div class="preview-wrap" id="preview-${id}"></div>
       `;
-      container.appendChild(div);
+      container.appendChild(card);
+
+      // Gestion de l'aperçu
+      const input = card.querySelector(`#photo-${id}`);
+      const previewWrap = card.querySelector(`#preview-${id}`);
+      input.addEventListener('change', () => {
+        previewWrap.innerHTML = '';
+        const file = input.files && input.files[0];
+        photos.delete(id);
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { alert('Le fichier sélectionné n’est pas une image.'); return; }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+          const url = e.target.result;
+          const box = document.createElement('div');
+          box.className = 'preview';
+          const img = document.createElement('img');
+          img.src = url;
+          const legend = document.createElement('div');
+          legend.className = 'legend';
+          legend.innerHTML = `<span>${file.name}</span><span class="status">Aperçu</span>`;
+          box.appendChild(img); box.appendChild(legend);
+          box.addEventListener('click', () => window.open(url,'_blank'));
+          previewWrap.appendChild(box);
+          photos.set(id, { file, dataURL: url, critere: c });
+        };
+        reader.readAsDataURL(file);
+      });
     });
 
-    // Préremplir la date du jour
+    // Préremplir la date
     document.addEventListener('DOMContentLoaded', () => {
       const dateInput = document.getElementById('dateAudit');
-      if (!dateInput.value) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-      }
+      if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
     });
 
-    // Calcul du score
-    function calculer() {
+    // Récupérer toutes les données de l'écran
+    function collectData(){
       const auditeur = document.getElementById('auditeur').value.trim();
       const date = document.getElementById('dateAudit').value;
       const zone = document.getElementById('zone').value;
 
-      if (!auditeur || !date || !zone) {
-        alert("Merci de renseigner le nom de l’auditeur, la date et la zone.");
-        return;
-      }
+      const lignes = [];
+      let total = 0, max = 0, incomplets = false;
 
-      const notes = document.querySelectorAll('.note');
-      let total = 0;
-      let max = 0;
+      criteres.forEach((c, idx) => {
+        const id = toId(c) + '-' + idx;
+        const note = document.getElementById(`note-${id}`).value;
+        const comment = document.getElementById(`comment-${id}`).value.trim();
+        const photo = photos.get(id) || null;
 
-      for (let n of notes) {
-        if (n.value === "") {
-          alert("Merci de remplir toutes les évaluations.");
-          return;
-        }
-        if (n.value !== "NA") {
-          total += valeurs[n.value];
-          max += 2;
-        }
-      }
+        if (note === "") incomplets = true;
+        if (note !== "" && note !== "NA") { total += valeurs[note]; max += 2; }
 
-      if (max === 0) {
-        alert("Tous les critères sont non applicables.");
-        return;
-      }
+        lignes.push({ id, critere: c, note, comment, photo }); // photo: {file, dataURL} ou null
+      });
 
-      const pourcentage = Math.round((total / max) * 100);
+      const pourcentage = max > 0 ? Math.round((total / max) * 100) : 0;
+      let niveau = 'Insuffisant', bg='var(--bad)';
+      if (pourcentage >= 80) { niveau = 'Très bon'; bg='var(--gxo-orange)'; }
+      else if (pourcentage >= 60) { niveau = 'Acceptable'; bg='var(--warn)'; }
+
+      return {
+        auditeur, date, zone,
+        lignes, total, max, pourcentage, niveau, bg, incomplets
+      };
+    }
+
+    function calculer(){
+      const d = collectData();
+      if (!d.auditeur || !d.date || !d.zone) { alert("Merci de renseigner le nom de l’auditeur, la date et la zone."); return; }
+      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
+      if (d.max === 0) { alert("Tous les critères sont non applicables."); return; }
+
       const res = document.getElementById('resultat');
+      res.style.background = getComputedStyle(document.documentElement).getPropertyValue(d.bg).trim();
+      res.innerHTML = `Auditeur : ${d.auditeur}<br>Date : ${d.date}<br>Zone : ${d.zone}<br><br>Score : ${d.pourcentage}%<br>${d.niveau}`;
+    }
 
-      // Couleur du panneau résultat (lisible + sens)
-      let bg = getComputedStyle(document.documentElement).getPropertyValue('--bad');  // rouge par défaut
-      let texte = 'Insuffisant';
+    // ===== PDF (jsPDF) =====
+    async function genererPDF(){
+      const d = collectData();
+      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
 
-      if (pourcentage >= 80) {
-        bg = getComputedStyle(document.documentElement).getPropertyValue('--gxo-orange'); // Orange GXO pour "Très bon"
-        texte = 'Très bon';
-      } else if (pourcentage >= 60) {
-        bg = getComputedStyle(document.documentElement).getPropertyValue('--warn'); // Ambre
-        texte = 'Acceptable';
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format:'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      // En-tête
+      doc.setFont('helvetica','bold'); doc.setFontSize(18);
+      doc.setTextColor(255,58,0); // GXO Orange
+      doc.text('Audit Propreté – GXO', pageW/2, 18, {align:'center'});
+
+      doc.setDrawColor(255,58,0); doc.setLineWidth(0.6);
+      doc.line(14, 22, pageW-14, 22);
+
+      // Infos
+      doc.setFontSize(12); doc.setTextColor(20);
+      let y = 30;
+      doc.text(`Auditeur : ${d.auditeur}`, 14, y); y+=7;
+      doc.text(`Date     : ${d.date}`,   14, y); y+=7;
+      doc.text(`Zone     : ${d.zone}`,   14, y); y+=10;
+
+      // Résumé score
+      doc.setFillColor(255,58,0); doc.setTextColor(255);
+      doc.roundedRect(14, y-6, pageW-28, 12, 3,3, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(14);
+      doc.text(`Score : ${d.pourcentage}% – ${d.niveau}`, pageW/2, y+2, {align:'center'});
+      y+=18;
+      doc.setTextColor(20); doc.setFont('helvetica','normal'); doc.setFontSize(12);
+
+      // Détails par critère + photo
+      const left = 14, right = pageW - 14, imgMaxW = right-left, imgMaxH = 80;
+
+      for (const l of d.lignes){
+        // Saut de page si besoin
+        if (y > pageH - 30) { doc.addPage(); y = 20; }
+
+        doc.setFont('helvetica','bold');
+        doc.text(l.critere, left, y); y+=6;
+
+        doc.setFont('helvetica','normal');
+        doc.text(`Évaluation : ${l.note || '-'}`, left, y);
+        if (l.comment) {
+          // Multi-line texte
+          const lines = doc.splitTextToSize(`Commentaire : ${l.comment}`, imgMaxW);
+          doc.text(lines, left, y+6);
+          y += 6 + lines.length*6;
+        } else { y += 8; }
+
+        // Image si présente (dataURL)
+        if (l.photo && l.photo.dataURL){
+          // Calcule ratio
+          const img = l.photo.dataURL;
+          try{
+            // On insère sous forme d'image (jsPDF gère base64 directement)
+            // On contraint la taille
+            const w = imgMaxW;
+            const h = Math.min(imgMaxH, w * 0.75); // ratio approx 4:3
+            if (y + h > pageH - 20) { doc.addPage(); y = 20; }
+            doc.addImage(img, 'JPEG', left, y, w, h); // format deviné, JPEG par défaut
+            y += h + 10;
+          }catch(e){
+            doc.setTextColor(200,0,0); doc.text('(Image non intégrée)', left, y); doc.setTextColor(20); y+=8;
+          }
+        }
+        y += 2;
       }
 
-      res.style.background = bg.trim();
-      res.innerHTML =
-        `Auditeur : ${auditeur}<br>` +
-        `Date : ${date}<br>` +
-        `Zone : ${zone}<br><br>` +
-        `Score : ${pourcentage}%<br>${texte}`;
+      doc.save(`Audit_GXO_${d.date}_${d.zone}.pdf`);
+      // jsPDF: client-side PDF (images via dataURL)  [5](https://github.com/parallax/jsPDF)[6](https://artskydj.github.io/jsPDF/docs/module-addImage.html)
+    }
+
+    // ===== CSV =====
+    function exportCSV(uploadMap){
+      const d = collectData();
+      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
+
+      const headers = [
+        'Auditeur','Date','Zone','Score(%)','Niveau',
+        'Critère','Évaluation','Commentaire','Fichier','URL'
+      ];
+      const rows = [];
+
+      for (const l of d.lignes){
+        const fileName = l.photo?.file?.name || '';
+        const url = uploadMap?.get(l.id) || ''; // URL de téléchargement Firebase si dispo
+        rows.push([
+          d.auditeur, d.date, d.zone, d.pourcentage, d.niveau,
+          l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '),
+          fileName, url
+        ]);
+      }
+
+      let csv = headers.join(';') + '\n';
+      csv += rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(';')).join('\n');
+
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Audit_GXO_${d.date}_${d.zone}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    // ====== Firebase (Cloud) – à activer avec votre configuration ======
+    // 1) Crée un projet sur https://console.firebase.google.com/
+    // 2) Ajoute une appli Web et récupère le snippet "firebaseConfig"
+    // 3) Dans la console Firebase :
+    //    - Active Authentification > Méthodes de connexion > Anonyme
+    //    - Crée Firestore (mode production)
+    //    - Active Storage (règles: écriture réservée aux utilisateurs authentifiés)
+    // Docs: ajout Firebase Web, Auth anonyme, Storage upload, Firestore addDoc  [1](https://firebase.google.com/docs/web/setup)[2](https://firebase.google.com/docs/auth/web/anonymous-auth)[3](https://firebase.google.com/docs/storage/web/upload-files)[4](https://firebase.google.com/docs/firestore/manage-data/add-data)
+
+    // >>>>> COLLER ICI VOTRE CONFIG <<<<<
+    // Exemple:
+    // window.FIREBASE_CONFIG = {
+    //   apiKey: "xxxxx",
+    //   authDomain: "xxxxx.firebaseapp.com",
+    //   projectId: "xxxxx",
+    //   storageBucket: "xxxxx.appspot.com",
+    //   messagingSenderId: "xxxxx",
+    //   appId: "xxxxx"
+    // };
+
+  </script>
+
+  <!-- Import Firebase (modules ESM depuis le CDN gstatic) uniquement si config présente -->
+  <script type="module">
+    if (window.FIREBASE_CONFIG) {
+      // SDK v9+ modular
+      // Guide d'installation Web: initializeApp, Auth/Storage/Firestore  [1](https://firebase.google.com/docs/web/setup)
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+      import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+      import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+      const app = initializeApp(window.FIREBASE_CONFIG);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const storage = getStorage(app);
+
+      // Connexion anonyme (pour autoriser les écritures)  [2](https://firebase.google.com/docs/auth/web/anonymous-auth)
+      signInAnonymously(auth).catch(console.error);
+
+      // Fonction globale appelée par le bouton
+      window.enregistrerCloud = async function(){
+        const d = collectData();
+        if (!d.auditeur || !d.date || !d.zone){ alert("Complète d’abord Auditeur / Date / Zone."); return; }
+        if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
+        if (d.max === 0) { alert("Tous les critères sont non applicables."); return; }
+
+        const timestamp = Date.now();
+        const folder = `audits/${d.date}_${d.zone}_${timestamp}`;
+        const uploadMap = new Map(); // idCritere -> url
+
+        // 1) Upload des photos dans Storage (uploadBytes puis getDownloadURL)  [3](https://firebase.google.com/docs/storage/web/upload-files)
+        for (const l of d.lignes){
+          if (l.photo && l.photo.file){
+            const cleanName = l.photo.file.name.replace(/[^\w\.\-]+/g,'_');
+            const path = `${folder}/${l.id}_${cleanName}`;
+            const r = ref(storage, path);
+            await uploadBytes(r, l.photo.file);
+            const url = await getDownloadURL(r);
+            uploadMap.set(l.id, url);
+          }
+        }
+
+        // 2) Enregistrer l’audit dans Firestore (addDoc)  [4](https://firebase.google.com/docs/firestore/manage-data/add-data)
+        const detail = d.lignes.map(l => ({
+          id: l.id,
+          critere: l.critere,
+          note: l.note || '',
+          comment: l.comment || '',
+          photoURL: uploadMap.get(l.id) || null
+        }));
+
+        const docRef = await addDoc(collection(db, 'audits'), {
+          auditeur: d.auditeur,
+          date: d.date,
+          zone: d.zone,
+          score: d.pourcentage,
+          niveau: d.niveau,
+          createdAt: serverTimestamp(),
+          folder,
+          detail
+        });
+
+        alert(`Audit enregistré (ID: ${docRef.id}).\nLes photos sont stockées et liées à l’audit.`);
+
+        // 3) Proposer CSV avec URLs Cloud
+        exportCSV(uploadMap);
+      };
+    } else {
+      // Si la config n'est pas fournie, on désactive juste la partie Cloud
+      window.enregistrerCloud = function(){
+        alert("Configuration Firebase manquante.\n\nPour activer la sauvegarde cloud :\n1) Crée un projet Firebase (console.firebase.google.com)\n2) Copie le snippet 'firebaseConfig'\n3) Colle-le dans index.html (section // >>>>> COLLER ICI VOTRE CONFIG <<<<<)\n4) Recharge la page.");
+      };
     }
   </script>
 </body>
 </html>
-``
