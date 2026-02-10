@@ -1,23 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Audit Propreté – GXO</title>
-  <meta name="description" content="Checklist d'audit propreté GXO — scoring, photos, PDF, CSV, PWA, offline."/>
-  <meta name="theme-color" content="#FF3A00"/>
 
-  <!-- PWA -->
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./icons/gxo-192.png"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-
-  <!-- Chart.js pour le mini-dashboard -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-
+  <!-- Styles -->
   <style>
     :root{
       /* Identité GXO + palette UI */
@@ -34,13 +22,10 @@
       --ok:#16a34a;
       --warn:#f59e0b;
       --bad:#dc2626;
-      --na:#64748b;
 
       --radius:14px;
       --shadow:0 10px 30px rgba(15,23,42,.08);
       --container:1100px;
-
-      --focus: 0 0 0 3px rgba(255,58,0,.25);
     }
 
     *{ box-sizing:border-box }
@@ -51,6 +36,7 @@
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
       color:var(--text);
+      /* Fond avec dégradé doux + motifs subtils */
       background:
         radial-gradient(1200px 600px at 10% -10%, rgba(255,58,0,.15), transparent 60%),
         radial-gradient(900px 500px at 100% 0%, rgba(255,179,159,.18), transparent 55%),
@@ -124,14 +110,16 @@
     textarea{ min-height:86px; resize:vertical; }
     input::placeholder, textarea::placeholder{ color:#9CA3AF; }
     input:focus, select:focus, textarea:focus{
-      border-color:var(--gxo-orange); box-shadow:var(--focus); background:#fff;
+      border-color:var(--gxo-orange); box-shadow:0 0 0 3px rgba(255,58,0,.16); background:#fff;
     }
 
+    /* Accessibilité : cacher visuel mais garder focus */
     .sr-only{
       position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
       clip: rect(0,0,0,0); white-space:nowrap; border:0;
     }
 
+    /* Critère */
     .critere-title{
       display:flex; align-items:center; gap:10px; margin: -6px 0 10px; font-weight:800;
       font-size:16px;
@@ -170,6 +158,7 @@
       background: #fff5f5;
     }
 
+    /* Boutons */
     .btn{
       width:100%; padding:14px 16px; font-size:16px; border:1px solid transparent;
       border-radius:12px; cursor:pointer; margin-top:10px; font-weight:800;
@@ -182,8 +171,9 @@
     .btn-outline:hover{ background:#FFF3EF; }
     .btn-danger{ background:linear-gradient(90deg,#ef4444,#dc2626); color:#fff; }
     .btn-bar{ display:grid; gap:10px; grid-template-columns:1fr; }
-    @media (min-width:900px){ .btn-bar{ grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr; } }
+    @media (min-width:900px){ .btn-bar{ grid-template-columns:1fr 1fr 1fr 1fr; } }
 
+    /* Résultat */
     #resultat{
       margin-top:16px; padding:20px; border-radius:var(--radius);
       text-align:center; font-size:18px; font-weight:800; color:#fff; box-shadow:var(--shadow);
@@ -192,8 +182,10 @@
     }
     #resultat small{ display:block; margin-top:6px; opacity:.9; font-weight:600 }
 
+    /* Helper */
     .helper{ font-size:12px; color:#475569; margin-top:6px; }
 
+    /* Barre outils (mode privé) */
     .toolbar{
       display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
       margin-bottom:12px;
@@ -209,6 +201,7 @@
     .switch input:checked{ background:linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-700)); }
     .switch input:checked:after{ transform: translateX(20px); }
 
+    /* Aperçu photo */
     .preview-wrap{ margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; }
     .preview{
       position:relative; width:220px; aspect-ratio:4/3;
@@ -229,6 +222,7 @@
     }
     .legend .remove:hover{ background: rgba(0,0,0,.6); }
 
+    /* Toast simple */
     .toast{
       position: fixed; left:50%; bottom:22px; transform:translateX(-50%);
       background:#0b1220; color:#fff; padding:12px 14px; border-radius:10px;
@@ -238,17 +232,13 @@
     }
     .toast.show{ opacity:1; transform: translate(-50%, -4px); }
 
+    /* Footer */
     footer{ text-align:center; color:#475569; font-size:12px; margin-top:24px; opacity:.95; }
-
-    /* Dashboard layout */
-    .dash-grid{ display:grid; grid-template-columns:1fr; gap:16px; }
-    @media (min-width: 900px){ .dash-grid{ grid-template-columns: 1fr 1fr; } }
-    canvas{ max-width:100%; height:auto; }
 
     /* Impression A4 propre */
     @media print {
       body{ background:#fff !important; padding:0; }
-      .header-kpi, .btn, .toolbar, #dashboard{ display:none !important; }
+      .header-kpi, .btn, .toolbar{ display:none !important; }
       .card{ box-shadow:none !important; border-color:#ddd; }
       #resultat{ color:#000; border:1px solid #ddd; background:#fff; }
       .preview{ border-color:#ccc; }
@@ -256,7 +246,7 @@
   </style>
 
   <!-- jsPDF pour le PDF (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -268,34 +258,30 @@
     <div class="card" aria-labelledby="ident-title">
       <h2 id="ident-title" class="sr-only">Informations d'identification</h2>
 
+      <!-- Barre outils -->
       <div class="toolbar">
         <label class="switch" title="Ne rien mémoriser sur cet appareil">
           <input id="privateMode" type="checkbox" checked>
           <span>Mode privé (ne pas sauvegarder)</span>
         </label>
-
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-outline" id="btnFillGood" title="Tout mettre en BON (sauf NA)">Tout BON</button>
-          <button class="btn btn-outline" id="btnFillNA" title="Tout mettre en N/A">Tout N/A</button>
-          <button class="btn btn-danger" id="resetAll">Nouveau / Réinitialiser</button>
-        </div>
+        <button class="btn btn-danger" id="resetAll">Nouveau / Réinitialiser</button>
       </div>
 
       <div class="row">
         <div>
           <label for="auditeur">Nom de l’auditeur</label>
-          <input type="text" id="auditeur" placeholder="Ex : Walid Adjout" autocomplete="name" required>
+          <input type="text" id="auditeur" placeholder="Ex : Walid Adjout" autocomplete="name">
           <div class="helper">Saisir le prénom + nom de l’auditeur.</div>
         </div>
 
         <div>
           <label for="dateAudit">Date de l’audit</label>
-          <input type="date" id="dateAudit" required>
+          <input type="date" id="dateAudit">
         </div>
 
         <div>
           <label for="zone">Zone</label>
-          <select id="zone" required>
+          <select id="zone">
             <option value="">-- Sélectionner la zone --</option>
             <option value="ND4">ND4</option>
             <option value="CD5">CD5</option>
@@ -314,35 +300,18 @@
       <button class="btn btn-primary" id="btnCalc">Calculer le score</button>
       <button class="btn btn-outline" id="btnPdf">Générer le PDF</button>
       <button class="btn btn-outline" id="btnCsv">Exporter CSV</button>
-      <button class="btn btn-outline" id="btnJson">Exporter JSON</button>
       <button class="btn btn-outline" id="btnPrint">Imprimer</button>
-      <button class="btn btn-outline" id="btnInstall" hidden>Installer l'app</button>
     </div>
 
     <div id="resultat" aria-live="polite"></div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="card" aria-labelledby="dash-title">
-      <h2 id="dash-title" class="sr-only">Tableau de bord</h2>
-      <div class="dash-grid">
-        <div>
-          <h3 style="margin:0 0 10px 0; font-size:16px;">Répartition des évaluations</h3>
-          <canvas id="chartPie" aria-label="Camembert des évaluations" role="img"></canvas>
-        </div>
-        <div>
-          <h3 style="margin:0 0 10px 0; font-size:16px;">Critères problématiques (Mauvais)</h3>
-          <canvas id="chartBar" aria-label="Histogramme des Mauvais par critère" role="img"></canvas>
-        </div>
-      </div>
-    </div>
-
     <footer>
-      Charte couleur GXO (#FF3A00). PDF/CSV/JSON générés côté navigateur. Données non transmises. PWA et mode hors-ligne disponibles.
+      Charte couleur GXO (#FF3A00). PDF et CSV générés côté navigateur. Données non transmises.
     </footer>
   </div>
 
+  <!-- Script principal -->
   <script>
-  (function(){
     /* =============================
        Données & constantes
     ============================= */
@@ -355,23 +324,19 @@
       "Bacs remis à leur place après utilisation",
       "Chariots remis en place après utilisation"
     ];
+    // Barème
     const valeurs = { "Bon": 2, "Moyen": 1, "Mauvais": 0 };
-    const LS_KEY = 'audit_proprete_gxo_v3';
-    const THEME_KEY = 'audit_theme';
+    const LS_KEY = 'audit_proprete_gxo_v2';
+
     const container = document.getElementById('criteres');
     const toId = s => s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+
+    // Mémoire des photos par critère (volatile)
     const photos = new Map();
+
+    // Mode privé (par défaut activé)
     const privateModeEl = document.getElementById('privateMode');
     const isPrivate = () => privateModeEl.checked === true;
-
-    // PWA install
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const btn = document.getElementById('btnInstall');
-      if (btn) btn.hidden = false;
-    });
 
     /* =============================
        UI dynamique (KPI + critères)
@@ -392,136 +357,106 @@
       document.querySelector('.container').prepend(wrap);
     }
 
-    function critereCardHTML(c, id) {
-      return `
-        <div class="critere-title">
-          <div>${id.index+1}. ${c}</div>
-          <span class="tag">Critère</span>
-        </div>
-
-        <fieldset class="segment" role="radiogroup" aria-label="Évaluation pour ${c}">
-          <legend class="sr-only">Évaluation</legend>
-
-          <div class="pill pill-ok">
-            <input class="sr-only" type="radio" id="note-${id.key}-ok" name="note-${id.key}" value="Bon">
-            <label for="note-${id.key}-ok">Bon</label>
-          </div>
-
-          <div class="pill pill-mid">
-            <input class="sr-only" type="radio" id="note-${id.key}-mid" name="note-${id.key}" value="Moyen">
-            <label for="note-${id.key}-mid">Moyen</label>
-          </div>
-
-          <div class="pill pill-bad">
-            <input class="sr-only" type="radio" id="note-${id.key}-bad" name="note-${id.key}" value="Mauvais">
-            <label for="note-${id.key}-bad">Mauvais</label>
-          </div>
-
-          <div class="pill pill-na">
-            <input class="sr-only" type="radio" id="note-${id.key}-na" name="note-${id.key}" value="NA">
-            <label for="note-${id.key}-na">N/A</label>
-          </div>
-        </fieldset>
-
-        <div style="height:10px"></div>
-
-        <label for="comment-${id.key}">Commentaire <span style="font-weight:600;color:#ef4444">(obligatoire si "Mauvais")</span></label>
-        <textarea id="comment-${id.key}" placeholder="Commentaire / anomalie / action à mener…"></textarea>
-
-        <div style="height:10px"></div>
-
-        <label for="photo-${id.key}">Photo</label>
-        <input type="file" accept="image/*" id="photo-${id.key}">
-        <div class="preview-wrap" id="preview-${id.key}"></div>
-      `;
-    }
-
-    async function fileToCompressedDataURL(file, maxDim=1280, quality=0.8){
-      return new Promise((resolve, reject) => {
-        try{
-          const img = new Image();
-          const reader = new FileReader();
-          reader.onload = ev => {
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              let { width, height } = img;
-              const ratio = Math.min(maxDim/width, maxDim/height, 1);
-              width = Math.round(width * ratio);
-              height = Math.round(height * ratio);
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0, width, height);
-              const dataURL = canvas.toDataURL('image/jpeg', quality);
-              resolve(dataURL);
-            };
-            img.onerror = () => resolve(null);
-            img.src = ev.target.result;
-          };
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
-        }catch(e){ resolve(null); }
-      });
-    }
-
     function renderCriteres(saved = null){
       container.innerHTML = '';
       criteres.forEach((c, idx) => {
-        const key = `${toId(c)}-${idx}`;
+        const id = `${toId(c)}-${idx}`;
         const card = document.createElement('div');
         card.className = 'card critere';
-        card.id = `critere-card-${key}`;
-        const savedRow = saved?.rows?.find(r => r.id === key);
 
-        card.innerHTML = critereCardHTML(c, {key, index: idx});
+        const savedRow = saved?.rows?.find(r => r.id === id);
+
+        card.innerHTML = `
+          <div class="critere-title">
+            <div>${idx+1}. ${c}</div>
+            <span class="tag">Critère</span>
+          </div>
+
+          <fieldset class="segment" role="radiogroup" aria-label="Évaluation pour ${c}">
+            <legend class="sr-only">Évaluation</legend>
+
+            <div class="pill pill-ok">
+              <input class="sr-only" type="radio" id="note-${id}-ok" name="note-${id}" value="Bon">
+              <label for="note-${id}-ok">Bon</label>
+            </div>
+
+            <div class="pill pill-mid">
+              <input class="sr-only" type="radio" id="note-${id}-mid" name="note-${id}" value="Moyen">
+              <label for="note-${id}-mid">Moyen</label>
+            </div>
+
+            <div class="pill pill-bad">
+              <input class="sr-only" type="radio" id="note-${id}-bad" name="note-${id}" value="Mauvais">
+              <label for="note-${id}-bad">Mauvais</label>
+            </div>
+
+            <div class="pill pill-na">
+              <input class="sr-only" type="radio" id="note-${id}-na" name="note-${id}" value="NA">
+              <label for="note-${id}-na">N/A</label>
+            </div>
+          </fieldset>
+
+          <div style="height:10px"></div>
+
+          <label for="comment-${id}">Commentaire <span style="font-weight:600;color:#ef4444">(obligatoire si "Mauvais")</span></label>
+          <textarea id="comment-${id}" placeholder="Commentaire / anomalie / action à mener…"></textarea>
+
+          <div style="height:10px"></div>
+
+          <label for="photo-${id}">Photo</label>
+          <input type="file" accept="image/*" id="photo-${id}">
+          <div class="preview-wrap" id="preview-${id}"></div>
+        `;
         container.appendChild(card);
 
-        // Restauration (si non privé)
+        // Restauration (uniquement si mode privé désactivé ET des données existent)
         if (!isPrivate() && savedRow?.note){
-          const inp = card.querySelector(`input[name="note-${key}"][value="${savedRow.note}"]`);
+          const inp = card.querySelector(`input[name="note-${id}"][value="${savedRow.note}"]`);
           if (inp) inp.checked = true;
         }
         if (!isPrivate() && savedRow?.comment){
-          card.querySelector(`#comment-${key}`).value = savedRow.comment;
+          card.querySelector(`#comment-${id}`).value = savedRow.comment;
         }
 
-        const input = card.querySelector(`#photo-${key}`);
-        const previewWrap = card.querySelector(`#preview-${key}`);
-        input.addEventListener('change', async () => {
+        // Aperçu photo + suppression
+        const input = card.querySelector(`#photo-${id}`);
+        const previewWrap = card.querySelector(`#preview-${id}`);
+        input.addEventListener('change', () => {
           previewWrap.innerHTML = '';
           const file = input.files && input.files[0];
-          photos.delete(key);
+          photos.delete(id);
           if (!file) return;
           if (!file.type.startsWith('image/')) { alert('Le fichier sélectionné n’est pas une image.'); return; }
 
-          // Compression adaptative
-          let quality = file.size > 6_000_000 ? 0.6 : 0.8;
-          const dataURL = await fileToCompressedDataURL(file, 1280, quality);
-
-          const safeURL = dataURL || URL.createObjectURL(file);
-          const box = document.createElement('div');
-          box.className = 'preview';
-          const img = document.createElement('img');
-          img.src = safeURL;
-          const legend = document.createElement('div');
-          legend.className = 'legend';
-          legend.innerHTML = `<span>${file.name}</span><button type="button" class="remove" title="Retirer la photo">Retirer</button>`;
-          legend.querySelector('.remove').addEventListener('click', () => {
-            input.value = '';
-            photos.delete(key);
-            previewWrap.innerHTML = '';
-            toast('🗑️ Photo retirée');
-          });
-          box.appendChild(img); box.appendChild(legend);
-          previewWrap.appendChild(box);
-          photos.set(key, { file, dataURL: dataURL, critere: c });
+          const reader = new FileReader();
+          reader.onload = e => {
+            const url = e.target.result;
+            const box = document.createElement('div');
+            box.className = 'preview';
+            const img = document.createElement('img');
+            img.src = url;
+            const legend = document.createElement('div');
+            legend.className = 'legend';
+            legend.innerHTML = `<span>${file.name}</span><button type="button" class="remove" title="Retirer la photo">Retirer</button>`;
+            legend.querySelector('.remove').addEventListener('click', () => {
+              // Nettoyage : input, preview, mémoire
+              input.value = '';
+              photos.delete(id);
+              previewWrap.innerHTML = '';
+              toast('🗑️ Photo retirée');
+            });
+            box.appendChild(img); box.appendChild(legend);
+            previewWrap.appendChild(box);
+            photos.set(id, { file, dataURL: url, critere: c });
+          };
+          reader.readAsDataURL(file);
         });
 
         // Surbrillance si "Mauvais"
         card.addEventListener('change', (e) => {
-          if (e.target.name === `note-${key}`) {
+          if (e.target.name === `note-${id}`) {
             const val = e.target.value;
-            const commentArea = card.querySelector(`#comment-${key}`);
+            const commentArea = card.querySelector(`#comment-${id}`);
             if (val === 'Mauvais') {
               commentArea.classList.add('require-comment');
               commentArea.focus({ preventScroll: false });
@@ -531,7 +466,7 @@
             compute(); saveLocalThrottled();
           }
         });
-        card.querySelector(`#comment-${key}`).addEventListener('input', () => { compute(); saveLocalThrottled(); });
+        card.querySelector(`#comment-${id}`).addEventListener('input', () => { compute(); saveLocalThrottled(); });
       });
     }
 
@@ -545,7 +480,6 @@
 
       const lignes = [];
       let total = 0, max = 0, incomplets = false, nNA = 0, nBad = 0, done = 0;
-      let countBon = 0, countMoyen = 0, countMauvais = 0;
 
       criteres.forEach((c, idx) => {
         const id = `${toId(c)}-${idx}`;
@@ -556,9 +490,7 @@
 
         if (note) done++;
         if (note === "") incomplets = true;
-        if (note === "Mauvais") { nBad++; countMauvais++; }
-        if (note === "Moyen") { countMoyen++; }
-        if (note === "Bon") { countBon++; }
+        if (note === "Mauvais") nBad++;
         if (note === "NA") nNA++;
 
         if (note !== "" && note !== "NA") { total += valeurs[note]; max += 2; }
@@ -571,14 +503,9 @@
       if (pourcentage >= 80) { niveau = 'Très bon'; bg='linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-700))'; }
       else if (pourcentage >= 60) { niveau = 'Acceptable'; bg='linear-gradient(90deg, #fbbf24, #f59e0b)'; }
 
-      // ID d'audit pour traçabilité (UUID light)
-      const auditId = 'AUD-' + Math.random().toString(36).slice(2,8).toUpperCase() + '-' + Date.now().toString().slice(-6);
-
       return {
-        auditId,
         auditeur, date, zone, lignes, total, max,
-        pourcentage, niveau, bg, incomplets, nNA, nBad, done, totalCriteres: criteres.length,
-        countBon, countMoyen, countMauvais
+        pourcentage, niveau, bg, incomplets, nNA, nBad, done, totalCriteres: criteres.length
       };
     }
 
@@ -610,7 +537,6 @@
       if (res){
         res.style.background = d.bg;
         res.innerHTML =
-          `Audit ID : ${d.auditId}<br>` +
           `Auditeur : ${d.auditeur || '—'}<br>` +
           `Date : ${d.date || '—'}<br>` +
           `Zone : ${d.zone || '—'}<br><br>` +
@@ -618,56 +544,35 @@
           `NA : ${d.nNA} &nbsp;|&nbsp; Mauvais : ${d.nBad}` +
           `<small>(Le score final est recalculé à l’identique au moment du PDF/CSV)</small>`;
       }
-
-      // Dashboard charts
-      updateCharts(d);
-
       return d;
     }
 
     /* =============================
-       Validation + helpers
+       Validation + actions
     ============================= */
     function checkCommentsRequired(d){
       for (const l of d.lignes){
         if (l.note === "Mauvais" && !l.comment){
           alert(`Merci d’ajouter un commentaire pour le critère : "${l.critere}" (note = Mauvais).`);
-          // Scroll vers la carte concernée
-          const el = document.getElementById(`critere-card-${l.id}`);
-          if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
           return false;
         }
       }
       return true;
     }
 
-    function scrollToFirstIncomplete(d){
-      const first = d.lignes.find(l => !l.note);
-      if (first){
-        const el = document.getElementById(`critere-card-${first.id}`);
-        if (el) {
-          el.scrollIntoView({behavior:'smooth', block:'center'});
-          el.style.boxShadow = '0 0 0 3px rgba(220,38,38,0.25)';
-          setTimeout(()=> el.style.boxShadow = '', 1000);
-        }
-      }
-    }
-
     function calculer(){
       const d = compute();
       if (!d.auditeur || !d.date || !d.zone) { alert("Merci de renseigner le nom de l’auditeur, la date et la zone."); return; }
-      if (d.incomplets) { scrollToFirstIncomplete(d); alert("Merci de remplir toutes les évaluations."); return; }
+      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
       if (!checkCommentsRequired(d)) return;
       toast('✅ Score calculé et prêt pour export/PDF');
     }
 
-    /* =============================
-       PDF / CSV / JSON
-    ============================= */
+    // PDF
     async function genererPDF(){
       const d = compute();
       if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
-      if (d.incomplets) { scrollToFirstIncomplete(d); alert("Merci de remplir toutes les évaluations."); return; }
+      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
       if (!checkCommentsRequired(d)) return;
 
       const { jsPDF } = window.jspdf;
@@ -678,14 +583,13 @@
       // En-tête
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
       doc.setTextColor(255,58,0);
-      doc.text('Audit Propreté – GXO', pageW/2, 16, {align:'center'});
+      doc.text('Audit Propreté – GXO', pageW/2, 18, {align:'center'});
       doc.setDrawColor(255,58,0); doc.setLineWidth(0.6);
-      doc.line(14, 20, pageW-14, 20);
+      doc.line(14, 22, pageW-14, 22);
 
       // Infos
       doc.setFontSize(12); doc.setTextColor(20);
-      let y = 28;
-      doc.text(`Audit ID : ${d.auditId}`, 14, y); y+=7;
+      let y = 30;
       doc.text(`Auditeur : ${d.auditeur}`, 14, y); y+=7;
       doc.text(`Date     : ${d.date}`,   14, y); y+=7;
       doc.text(`Zone     : ${d.zone}`,   14, y); y+=10;
@@ -698,7 +602,7 @@
       y+=18;
       doc.setTextColor(20); doc.setFont('helvetica','normal'); doc.setFontSize(12);
 
-      // Détails + photos (compressées)
+      // Détails + photos
       const left = 14, right = pageW - 14, imgMaxW = right-left, imgMaxH = 80;
 
       d.lignes.forEach((l, i) => {
@@ -715,20 +619,13 @@
           y += 6 + lines.length*6;
         } else { y += 8; }
 
-        if (l.photo && (l.photo.dataURL || l.photo.file)){
+        if (l.photo && l.photo.dataURL){
           try{
-            let dataURL = l.photo.dataURL;
-            if (!dataURL) {
-              // fallback compress if not precomputed
-              dataURL = await fileToCompressedDataURL(l.photo.file, 1280, 0.8);
-            }
-            if (dataURL){
-              const w = imgMaxW;
-              const h = Math.min(imgMaxH, w * 0.75);
-              if (y + h > pageH - 20) { doc.addPage(); y = 20; }
-              doc.addImage(dataURL, 'JPEG', left, y, w, h);
-              y += h + 10;
-            }
+            const w = imgMaxW;
+            const h = Math.min(imgMaxH, w * 0.75);
+            if (y + h > pageH - 20) { doc.addPage(); y = 20; }
+            doc.addImage(l.photo.dataURL, 'JPEG', left, y, w, h);
+            y += h + 10;
           }catch(e){
             doc.setTextColor(200,0,0); doc.text('(Image non intégrée)', left, y); doc.setTextColor(20); y+=8;
           }
@@ -740,14 +637,15 @@
       toast('📄 PDF généré');
     }
 
+    // CSV
     function exportCSV(){
       const d = compute();
       if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
-      if (d.incomplets) { scrollToFirstIncomplete(d); alert("Merci de remplir toutes les évaluations."); return; }
+      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
       if (!checkCommentsRequired(d)) return;
 
       const headers = [
-        'AuditID','Auditeur','Date','Zone','Score(%)','Niveau','NA','Mauvais',
+        'Auditeur','Date','Zone','Score(%)','Niveau','NA','Mauvais',
         'Critère','Évaluation','Commentaire','Fichier'
       ];
       const rows = [];
@@ -755,7 +653,7 @@
       for (const l of d.lignes){
         const fileName = l.photo?.file?.name || '';
         rows.push([
-          d.auditId, d.auditeur, d.date, d.zone, d.pourcentage, d.niveau, d.nNA, d.nBad,
+          d.auditeur, d.date, d.zone, d.pourcentage, d.niveau, d.nNA, d.nBad,
           l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '), fileName
         ]);
       }
@@ -771,36 +669,13 @@
       toast('📥 CSV exporté');
     }
 
-    function exportJSON(){
-      const d = compute();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
-      if (d.incomplets) { scrollToFirstIncomplete(d); alert("Merci de remplir toutes les évaluations."); return; }
-      if (!checkCommentsRequired(d)) return;
-
-      // On supprime les dataURL (trop lourdes) et garde juste le nom de fichier
-      const payload = {
-        auditId: d.auditId,
-        auditeur: d.auditeur, date: d.date, zone: d.zone,
-        score: d.pourcentage, niveau: d.niveau, NA: d.nNA, mauvais: d.nBad,
-        lignes: d.lignes.map(l => ({
-          id: l.id, critere: l.critere, note: l.note || '', comment: l.comment || '',
-          fichier: l.photo?.file?.name || ''
-        }))
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Audit_GXO_${d.date}_${d.zone}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      toast('🗂️ JSON exporté');
-    }
-
     /* =============================
        Sauvegarde locale (désactivable)
     ============================= */
     function saveLocal(){
-      if (isPrivate()) return;
+      if (isPrivate()) return; // En mode privé : ne rien stocker
       const d = collectData();
+      // Ne pas stocker les dataURL d’images pour éviter de saturer le stockage.
       const rows = d.lignes.map(({id, note, comment}) => ({id, note, comment}));
       const payload = {
         auditeur: d.auditeur, date: d.date, zone: d.zone, rows
@@ -810,94 +685,33 @@
 
     let _saveTimer = null;
     function saveLocalThrottled(){
-      if (isPrivate()) return;
+      if (isPrivate()) return; // pas de débounce si privé
       clearTimeout(_saveTimer);
       _saveTimer = setTimeout(saveLocal, 200);
     }
 
     function loadLocal(){
-      if (isPrivate()) return null;
+      if (isPrivate()) return null; // en mode privé, on ignore toute donnée existante
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return null;
       try { return JSON.parse(raw); } catch { return null; }
     }
 
     function clearAllData(){
+      // 1) Vider le stockage
       localStorage.removeItem(LS_KEY);
+      // 2) Vider photos mémoire + inputs file + previews
       photos.clear();
       document.querySelectorAll('input[type="file"]').forEach(i => i.value = '');
       document.querySelectorAll('.preview-wrap').forEach(w => w.innerHTML = '');
+      // 3) Réinitialiser champs
       document.querySelectorAll('input[type="text"], textarea').forEach(i => i.value = '');
       document.getElementById('dateAudit').value = new Date().toISOString().split('T')[0];
       document.getElementById('zone').value = '';
+      // 4) Réinitialiser les sélections
       document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
       compute();
       toast('♻️ Formulaire réinitialisé');
-    }
-
-    /* =============================
-       Dashboard (Chart.js)
-    ============================= */
-    let pie = null, bar = null;
-
-    function initCharts(){
-      const pieCtx = document.getElementById('chartPie');
-      const barCtx = document.getElementById('chartBar');
-
-      if (pieCtx){
-        pie = new Chart(pieCtx, {
-          type: 'doughnut',
-          data: {
-            labels: ['Bon', 'Moyen', 'Mauvais', 'N/A'],
-            datasets: [{
-              data: [0,0,0,0],
-              backgroundColor: ['#16a34a','#f59e0b','#dc2626','#64748b'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'bottom', labels: { boxWidth: 12 } },
-              tooltip: { enabled: true }
-            },
-            cutout: '60%'
-          }
-        });
-      }
-
-      if (barCtx){
-        bar = new Chart(barCtx, {
-          type: 'bar',
-          data: {
-            labels: criteres.map((c,i)=> `${i+1}`),
-            datasets: [{
-              label: 'Mauvais',
-              data: new Array(criteres.length).fill(0),
-              backgroundColor: '#dc2626'
-            }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: {
-              y: { beginAtZero: true, ticks: { stepSize: 1 } }
-            },
-            plugins: { legend: { display: false } }
-          }
-        });
-      }
-    }
-
-    function updateCharts(d){
-      if (pie){
-        pie.data.datasets[0].data = [d.countBon, d.countMoyen, d.countMauvais, d.nNA];
-        pie.update('none');
-      }
-      if (bar){
-        const badCounts = d.lignes.map(l => l.note === 'Mauvais' ? 1 : 0);
-        bar.data.datasets[0].data = badCounts;
-        bar.update('none');
-      }
     }
 
     /* =============================
@@ -915,17 +729,6 @@
       setTimeout(() => el.classList.remove('show'), 1600);
     }
 
-    function fillAll(value){
-      criteres.forEach((c, idx) => {
-        const id = `${toId(c)}-${idx}`;
-        const input = document.querySelector(`input[name="note-${id}"][value="${value}"]`);
-        if (input){ input.checked = true; }
-        const commentArea = document.getElementById(`comment-${id}`);
-        if (commentArea) commentArea.classList.toggle('require-comment', value === 'Mauvais');
-      });
-      compute(); saveLocalThrottled();
-    }
-
     /* =============================
        Init
     ============================= */
@@ -936,20 +739,22 @@
       const dateInput = document.getElementById('dateAudit');
       if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
 
-      // CRITÈRES
+      // Par défaut : MODE PRIVÉ ACTIVÉ -> on n’essaye pas de charger
       renderCriteres();
 
-      // Mode privé ON/OFF
+      // Si l’utilisateur désactive le mode privé et qu’il existe des données, on les charge
       privateModeEl.addEventListener('change', () => {
         if (!isPrivate()){
           const saved = loadLocal();
           renderCriteres(saved || null);
+          // Restaurer en-tête si présent
           const data = saved || {};
           document.getElementById('auditeur').value = data.auditeur || '';
           document.getElementById('dateAudit').value = data.date || new Date().toISOString().split('T')[0];
           document.getElementById('zone').value = data.zone || '';
           toast('💾 Restauration depuis cet appareil');
         } else {
+          // Re-render propre sans données sauvegardées
           renderCriteres(null);
           toast('🛡️ Mode privé activé : rien n’est conservé');
         }
@@ -960,7 +765,6 @@
       document.getElementById('btnCalc').addEventListener('click', calculer);
       document.getElementById('btnPdf').addEventListener('click', genererPDF);
       document.getElementById('btnCsv').addEventListener('click', exportCSV);
-      document.getElementById('btnJson').addEventListener('click', exportJSON);
       document.getElementById('btnPrint').addEventListener('click', () => window.print());
 
       document.getElementById('resetAll').addEventListener('click', () => {
@@ -969,9 +773,6 @@
         }
       });
 
-      document.getElementById('btnFillGood').addEventListener('click', () => fillAll('Bon'));
-      document.getElementById('btnFillNA').addEventListener('click', () => fillAll('NA'));
-
       // Listeners haut de fiche
       ['auditeur','dateAudit','zone'].forEach(id => {
         const el = document.getElementById(id);
@@ -979,30 +780,9 @@
         el.addEventListener('change', () => { compute(); saveLocalThrottled(); });
       });
 
-      // Charts
-      initCharts();
+      // Compute initial
       compute();
-
-      // PWA: SW registration
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(()=>{});
-        });
-      }
-      // PWA: Install
-      const btnInstall = document.getElementById('btnInstall');
-      if (btnInstall){
-        btnInstall.addEventListener('click', async () => {
-          if (!deferredPrompt) return;
-          deferredPrompt.prompt();
-          const choiceResult = await deferredPrompt.userChoice;
-          if (choiceResult.outcome === 'accepted') { toast('📲 Application installée'); }
-          deferredPrompt = null;
-          btnInstall.hidden = true;
-        });
-      }
     });
-  })();
   </script>
 </body>
 </html>
