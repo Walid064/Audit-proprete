@@ -2,489 +2,950 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Audit Propreté GXO</title>
+  <title>Audit Propreté GXO – PDF & Mail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- jsPDF pour PDF lisible -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html2canvas pour capturer les photos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-  <!-- ===== Styles (charte + UI pro) ===== -->
   <style>
-    :root{
-      --gxo-orange:#FF3A00;
-      --gxo-white:#FFFFFF;
-      --text:#111827;
-      --muted:#6B7280;
-      --border:#E5E7EB;
-      --bg:#F8FAFC;
-      --ok:#22C55E;
-      --warn:#F59E0B;
-      --bad:#DC2626;
-      --radius:12px;
-      --shadow:0 4px 12px rgba(0,0,0,.12);
-      --container: 960px;
-    }
-    *{ box-sizing: border-box; }
-    html,body{ height:100%; }
+    *{box-sizing:border-box;margin:0;padding:0}
     body{
-      margin:0;
-      font-family: Arial, Helvetica, sans-serif;
-      color:var(--text);
-      background: linear-gradient(135deg, var(--gxo-orange) 0%, #FFB39F 30%, var(--gxo-white) 100%);
-      background-attachment: fixed;
-      padding:32px 16px;
+      font-family:'Inter',system-ui,sans-serif;
+      background:radial-gradient(circle at top left,#e5e7eb 0,#f8fafc 40%,#e5e7eb 100%);
+      color:#334155;
+      line-height:1.6;
     }
-    .container{ max-width: var(--container); margin:0 auto; }
+    .app{max-width:1200px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:18px;min-height:100vh;}
+    .header{
+      background:linear-gradient(135deg,#0f172a,#020617);
+      color:#fff;padding:18px 22px;border-radius:20px;
+      display:flex;justify-content:space-between;align-items:center;
+      box-shadow:0 18px 40px rgba(15,23,42,0.45);position:relative;overflow:hidden;
+    }
+    .header::before{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:
+        radial-gradient(circle at 0 0,rgba(255,58,0,0.4),transparent 60%),
+        radial-gradient(circle at 100% 100%,rgba(148,163,184,0.4),transparent 60%);
+      opacity:.8;
+    }
+    .header>*{position:relative;z-index:1;}
+    .header-brand{display:flex;align-items:center;gap:14px;}
+    .header-logo{
+      width:46px;height:46px;border-radius:14px;
+      background:linear-gradient(135deg,#ff3a00,#ff6a33);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:20px;box-shadow:0 12px 34px rgba(255,58,0,0.6);
+    }
+    .header-text h1{font-size:20px;font-weight:800;letter-spacing:-0.03em;}
+    .header-text span{font-size:12px;opacity:.9;}
+    .header-right{text-align:right;font-size:11px;}
+    .header-pill{
+      padding:6px 12px;border-radius:999px;border:1px solid rgba(148,163,184,0.6);
+      background:rgba(15,23,42,0.85);display:inline-flex;align-items:center;gap:6px;
+      font-size:11px;
+    }
+    .header-pill-dot{
+      width:9px;height:9px;border-radius:999px;background:#10b981;
+      box-shadow:0 0 10px rgba(16,185,129,0.9);
+    }
 
-    h1{
-      text-align:center; color:#fff; margin:0 0 20px 0;
-      text-shadow: 0 1px 2px rgba(0,0,0,.25); letter-spacing:.3px;
-    }
+    .main-grid{display:grid;grid-template-columns:2fr 1.3fr;gap:18px;}
+    @media(max-width:900px){.main-grid{grid-template-columns:1fr;}}
+
     .card{
-      background:#fff; border-radius:var(--radius); padding:16px;
-      margin-bottom:16px; box-shadow:var(--shadow); border:1px solid var(--border);
+      background:#fff;border-radius:20px;border:1px solid #e2e8f0;
+      box-shadow:0 10px 26px rgba(15,23,42,0.18);
+      display:flex;flex-direction:column;overflow:hidden;
     }
-    .row{ display:flex; flex-direction:column; gap:12px; }
-    label{ display:block; font-weight:700; font-size:14px; margin-bottom:6px; color:var(--text); }
-    input, select, textarea{
-      width:100%; padding:12px 10px; font-size:14px; border-radius:10px;
-      border:1px solid var(--border); background:var(--bg); outline:none;
-      transition:border-color .2s, box-shadow .2s, background .2s;
+    .card-header{padding:16px 18px;border-bottom:1px solid #e5e7eb;}
+    .card-title{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:2px;}
+    .card-sub{font-size:12px;color:#94a3b8;}
+    .card-body{padding:18px;display:flex;flex-direction:column;gap:14px;}
+
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 14px;}
+    .form-group{display:flex;flex-direction:column;gap:4px;}
+    .label{font-size:12px;font-weight:600;color:#334155;display:flex;justify-content:space-between;}
+    .helper{font-size:10px;color:#94a3b8;}
+    input,select,textarea{
+      font-family:inherit;font-size:13px;
+      padding:8px 10px;border-radius:12px;border:1px solid #cbd5e1;
+      background:#f9fafb;outline:none;transition:.15s;
     }
-    textarea{ min-height:80px; resize:vertical; }
-    input::placeholder, textarea::placeholder{ color:#9CA3AF; }
-    input:focus, select:focus, textarea:focus{
-      border-color:var(--gxo-orange); box-shadow:0 0 0 3px rgba(255,58,0,.18); background:#fff;
+    input:focus,select:focus,textarea:focus{
+      border-color:#ff3a00;box-shadow:0 0 0 2px rgba(255,58,0,0.25);background:#fff;
     }
 
-    .critere{ margin-bottom:10px; }
+    .zone-buttons{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+    .zone-btn{
+      border-radius:999px;border:1px solid #cbd5e1;
+      padding:6px 12px;font-size:11px;font-weight:600;
+      background:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.08em;
+    }
+    .zone-btn.active{
+      background:linear-gradient(135deg,#ff3a00,#ff6a33);
+      color:#fff;border-color:#ff3a00;box-shadow:0 8px 18px rgba(255,58,0,0.45);
+    }
+
+    .checklist-header{
+      padding:10px 14px;border-radius:16px;border:1px solid #cbd5e1;
+      background:linear-gradient(90deg,#f9fafb,#eef2ff);
+      display:flex;justify-content:space-between;align-items:center;
+    }
+    .checklist-title{font-size:14px;font-weight:700;color:#1f2937;}
+    .checklist-sub{font-size:12px;color:#94a3b8;}
+    .badge-count{
+      font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;
+      background:rgba(255,58,0,0.07);color:#ff3a00;
+    }
+
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;}
+    th{background:#f3f4f6;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;}
+    td{padding:8px;border-bottom:1px solid #e5e7eb;vertical-align:top;}
+    .critere-titre{font-weight:600;color:#0f172a;margin-bottom:2px;}
+    .critere-zone{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;background:#e5e7eb;text-transform:uppercase;letter-spacing:.08em;color:#4b5563;}
+
+    .note-select{width:100%;padding:6px 8px;border-radius:9px;border:1px solid #cbd5e1;background:#fff;font-size:13px;}
+    .note-bien{border-left:4px solid #10b981;background:#ecfdf5;}
+    .note-moyen{border-left:4px solid #f59e0b;background:#fffbeb;}
+    .note-mauvais{border-left:4px solid #ef4444;background:#fef2f2;}
+
+    .comment{width:100%;font-size:12px;padding:6px 8px;border-radius:9px;border:1px dashed #cbd5e1;background:#f9fafb;}
+
+    .photo-zone{
+      width:100%;min-height:60px;border-radius:10px;border:2px dashed #cbd5e1;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      font-size:11px;background:#f9fafb;position:relative;cursor:pointer;padding:4px;
+    }
+    .photo-zone:hover{border-color:#ff3a00;background:#fff7ed;}
+    .photo-input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+    .photo-name{font-size:11px;font-weight:600;color:#0f172a;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .photo-preview{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;}
+    .photo-preview img{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;}
+
+    .actions{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;}
+    .btns{display:flex;flex-wrap:wrap;gap:8px;}
     .btn{
-      width:100%; padding:14px 16px; font-size:16px; border:1px solid transparent;
-      border-radius:10px; cursor:pointer; margin-top:10px; font-weight:700;
-      transition:transform .02s ease, filter .2s ease, background .2s ease, color .2s ease;
+      border:none;border-radius:999px;padding:9px 16px;font-size:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.08em;display:inline-flex;align-items:center;gap:6px;
+      cursor:pointer;box-shadow:0 4px 10px rgba(15,23,42,0.15);background:#e5e7eb;color:#111827;
     }
-    .btn:active{ transform:scale(.998); }
-    .btn-primary{ background:var(--gxo-orange); color:#fff; }
-    .btn-primary:hover{ filter:brightness(0.95); }
-    .btn-outline{ background:#fff; color:var(--gxo-orange); border-color:var(--gxo-orange); }
-    .btn-outline:hover{ background:#FFF3EF; }
-    .btn-bar{ display:grid; gap:10px; grid-template-columns:1fr; }
-    @media (min-width:720px){ .btn-bar{ grid-template-columns:1fr 1fr 1fr; } }
+    .btn-primary{background:linear-gradient(135deg,#ff3a00,#ff6a33);color:#fff;box-shadow:0 10px 20px rgba(255,58,0,0.5);}
+    .btn-primary:hover{transform:translateY(-1px);}
+    .btn-secondary{background:#fff;}
+    .btn-mail{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;}
+    .btn:disabled{opacity:.5;cursor:default;}
 
-    #resultat{
-      margin-top:16px; padding:20px; border-radius:var(--radius);
-      text-align:center; font-size:18px; font-weight:700; color:#fff; box-shadow:var(--shadow);
-    }
-    .helper{ font-size:12px; color:var(--muted); margin-top:6px; }
+    .score-chip{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:999px;background:#f9fafb;border:1px solid #e5e7eb;}
+    .score-circle{width:36px;height:36px;border-radius:50%;border:3px solid #ff3a00;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:#fff;}
+    .score-status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+    .score-detail{font-size:11px;color:#94a3b8;}
 
-    /* Aperçu photo */
-    .preview-wrap{ margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; }
-    .preview{
-      position:relative; width:220px; aspect-ratio:4/3;
-      border:1px solid var(--border); border-radius:8px; overflow:hidden;
-      background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.06); cursor:zoom-in;
-    }
-    .preview img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .preview .legend{
-      position:absolute; left:0; right:0; bottom:0;
-      background:linear-gradient(transparent, rgba(0,0,0,.55));
-      color:#fff; font-size:12px; padding:6px 8px;
-      display:flex; justify-content:space-between; gap:6px;
-    }
-    .legend .status{ font-weight:700; }
+    .meta-block{border-radius:16px;border:1px solid #e5e7eb;padding:12px;background:#f9fafb;font-size:13px;}
+    .meta-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e5e7eb;font-size:12px;}
+    .meta-row:last-child{border-bottom:none;}
+    .meta-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;}
+    .meta-value{font-weight:600;color:#334155;}
 
-    footer{ text-align:center; color:#fff; font-size:12px; margin-top:24px; opacity:.9; }
-
-    /* Impression (PDF via Ctrl+P – le PDF “auto” a son propre rendu) */
-    @media print {
-      body{ background:#fff !important; padding:0; }
-      .btn{ display:none !important; }
-      .card{ box-shadow:none !important; border-color:#ddd; }
-      #resultat{ color:#000; border:1px solid #ddd; }
-      .preview{ border-color:#ccc; }
+    .score-card{
+      margin-top:14px;border-radius:18px;padding:14px 16px;
+      background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;
     }
+    .score-main{display:flex;justify-content:space-between;gap:10px;align-items:center;}
+    .score-main h2{font-size:26px;font-weight:800;margin-bottom:2px;}
+    .score-main p{font-size:12px;opacity:.9;}
+    .score-ring{width:70px;height:70px;border-radius:50%;border:4px solid rgba(148,163,184,0.7);display:flex;align-items:center;justify-content:center;}
+    .score-ring-inner{width:60%;height:60%;border-radius:50%;background:#020617;display:flex;align-items:center;justify-content:center;font-weight:700;}
+    .score-scale{margin-top:8px;height:6px;border-radius:999px;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);position:relative;overflow:hidden;}
+    .score-ind{position:absolute;top:-3px;width:3px;height:12px;border-radius:999px;background:#fff;box-shadow:0 0 10px rgba(255,255,255,0.9);left:0%;transition:left .5s;}
+    .score-legend{margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.8;}
+
+    .nc-title{margin-top:14px;font-size:13px;font-weight:700;color:#374151;}
+    .nc-list{margin-top:6px;max-height:200px;overflow-y:auto;border-radius:16px;border:1px solid rgba(239,68,68,0.35);background:#fef2f2;font-size:12px;}
+    .nc-item{padding:8px 10px;border-bottom:1px solid rgba(248,113,113,0.4);display:flex;justify-content:space-between;gap:8px;}
+    .nc-item:last-child{border-bottom:none;}
+    .nc-label{font-weight:600;color:#991b1b;margin-bottom:2px;}
+    .nc-comment{color:#b91c1c;font-size:12px;}
+    .nc-zone{font-size:10px;color:#374151;margin-top:2px;}
+    .nc-tag{align-self:flex-start;padding:3px 8px;font-size:10px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em;}
+    .nc-maj{background:rgba(239,68,68,0.2);color:#b91c1c;}
+    .nc-min{background:rgba(245,158,11,0.25);color:#92400e;}
+
+    .btn-reset{margin-top:10px;width:100%;}
+    footer{margin-top:10px;font-size:11px;text-align:center;color:#94a3b8;}
+
+    @media print{
+      body{background:#fff!important;}
+      .header,.btn,.zone-buttons{display:none!important;}
+      .app{padding:8px!important;}
+      .card{box-shadow:none!important;border-radius:0!important;}
+      .main-grid{grid-template-columns:1fr!important;gap:8px!important;}
+      .nc-list{max-height:none!important;}
+    }
+
+    /* PDF Report styles (hidden on page) */
+    #pdfReport{display:none;}
+    .pdf-report{
+      width:210mm;height:297mm;background:#fff;color:#000;font-family:'Inter',Arial,sans-serif;
+      padding:15mm;font-size:11pt;line-height:1.4;
+    }
+    .pdf-header{
+      border-bottom:3px solid #ff3a00;padding-bottom:8mm;margin-bottom:8mm;display:flex;justify-content:space-between;align-items:center;
+    }
+    .pdf-header-left h1{font-size:20pt;font-weight:700;margin:0;color:#0f172a;}
+    .pdf-header-left p{font-size:9pt;color:#666;margin:2pt 0;}
+    .pdf-header-right{font-size:9pt;color:#666;text-align:right;}
+    .pdf-meta{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-bottom:8mm;}
+    .pdf-meta-item{border:1px solid #e5e7eb;padding:4mm;border-radius:3mm;background:#fafafa;}
+    .pdf-meta-label{font-size:8pt;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5pt;}
+    .pdf-meta-value{font-size:11pt;font-weight:600;color:#0f172a;margin-top:1mm;}
+    .pdf-score-banner{background:linear-gradient(90deg,#0f172a,#1e293b);color:#fff;padding:6mm;border-radius:3mm;margin-bottom:8mm;display:flex;justify-content:space-between;align-items:center;}
+    .pdf-score-value{font-size:28pt;font-weight:800;}
+    .pdf-score-status{font-size:11pt;font-weight:600;}
+    .pdf-section{margin-bottom:10mm;page-break-inside:avoid;}
+    .pdf-section h2{font-size:13pt;font-weight:700;color:#0f172a;border-bottom:2px solid #ff3a00;padding-bottom:2mm;margin-bottom:4mm;}
+    .pdf-criteria{margin-bottom:6mm;border:1px solid #e5e7eb;padding:4mm;border-radius:2mm;background:#fafafa;}
+    .pdf-criteria-num{font-weight:700;color:#ff3a00;margin-bottom:1mm;}
+    .pdf-criteria-title{font-size:10pt;font-weight:600;color:#0f172a;}
+    .pdf-criteria-zone{font-size:8pt;color:#666;background:#e5e7eb;padding:1mm 3mm;border-radius:2mm;display:inline-block;margin:1mm 0;}
+    .pdf-criteria-note{background:#fff;border-left:3px solid #ff3a00;padding:2mm 3mm;margin:2mm 0;font-weight:600;}
+    .pdf-criteria-note.bien{border-left-color:#10b981;background:#ecfdf5;color:#166534;}
+    .pdf-criteria-note.moyen{border-left-color:#f59e0b;background:#fffbeb;color:#b45309;}
+    .pdf-criteria-note.mauvais{border-left-color:#ef4444;background:#fef2f2;color:#b91c1c;}
+    .pdf-comment{font-size:9pt;color:#555;margin:2mm 0;background:#f9fafb;padding:2mm 3mm;border-radius:2mm;}
+    .pdf-photo{margin:2mm 0;border:1px solid #ddd;border-radius:2mm;overflow:hidden;}
+    .pdf-photo img{width:100%;max-height:40mm;object-fit:contain;background:#f9f9f9;}
+    .pdf-photo-label{font-size:8pt;color:#666;background:#fafafa;padding:1.5mm 2mm;border-top:1px solid #e5e7eb;}
+    .pdf-footer{margin-top:8mm;padding-top:3mm;border-top:1px solid #ddd;font-size:8pt;color:#999;text-align:center;}
   </style>
-
-  <!-- ===== Librairie PDF ===== -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
-          integrity="sha256-+f2dQO0w6f8vQrc6Ww6Hh4nTkq4tO7KZbL6q5G2z8Ww=" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>Audit Propreté – GXO</h1>
-
-    <!-- IDENTIFICATION -->
-    <div class="card">
-      <div class="row">
-        <div>
-          <label for="auditeur">Nom de l’auditeur</label>
-          <input type="text" id="auditeur" placeholder="Ex : Walid Adjout">
-          <div class="helper">Saisir le prénom + nom de l’auditeur.</div>
-        </div>
-
-        <div>
-          <label for="dateAudit">Date de l’audit</label>
-          <input type="date" id="dateAudit">
-        </div>
-
-        <div>
-          <label for="zone">Zone</label>
-          <select id="zone">
-            <option value="">-- Sélectionner la zone --</option>
-            <option value="ND4">ND4</option>
-            <option value="CD5">CD5</option>
-            <option value="RIU">RIU</option>
-            <option value="ECOM">ECOM</option>
-          </select>
-        </div>
+<div class="app">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">GXO</div>
+      <div class="header-text">
+        <h1>Audit Propreté – Entrepôt</h1>
+        <span>Interface premium – QSE & Management</span>
       </div>
     </div>
-
-    <!-- CRITERES -->
-    <div id="criteres"></div>
-
-    <!-- ACTIONS -->
-    <div class="btn-bar">
-      <button class="btn btn-primary" onclick="calculer()">Calculer le score</button>
-      <button class="btn btn-outline" onclick="genererPDF()">Générer le PDF</button>
-      <button class="btn btn-outline" onclick="exportCSV()">Exporter CSV</button>
+    <div class="header-right">
+      <div class="header-pill">
+        <div class="header-pill-dot"></div>
+        Interface audit active
+      </div>
+      <div style="margin-top:2px;opacity:.8;">Version interne 2026</div>
     </div>
+  </header>
 
-    <!-- Cloud (Firebase) -->
-    <div class="btn-bar">
-      <button class="btn btn-primary" onclick="enregistrerCloud()">Enregistrer dans le Cloud (photos + audit)</button>
-    </div>
+  <main class="main-grid">
+    <!-- GAUCHE -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">Paramètres d'audit</div>
+        <div class="card-sub">Complète les informations, sélectionne la zone, évalue chaque critère puis génère le PDF / mail.</div>
+      </div>
+      <div class="card-body">
+        <!-- FORM -->
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="label">
+              <span>Auditeur responsable</span>
+              <span class="helper">ex : Walid Adjout</span>
+            </div>
+            <input id="auditeur" type="text" placeholder="Nom & prénom" />
+          </div>
+          <div class="form-group">
+            <div class="label">
+              <span>Date de l'audit</span>
+              <span class="helper">JJ/MM/AAAA</span>
+            </div>
+            <input id="dateAudit" type="date" />
+          </div>
+          <div class="form-group">
+            <div class="label">
+              <span>Zone auditée</span>
+              <span class="helper">Sélectionne la zone cible</span>
+            </div>
+            <select id="zone">
+              <option value="">— Sélectionner la zone —</option>
+              <option value="ND4">ND4</option>
+              <option value="CD5">CD5</option>
+              <option value="RIU">RIU</option>
+              <option value="ECOM">ECOM</option>
+              <option value="ND3">ND3</option>
+            </select>
+            <div class="zone-buttons">
+              <button type="button" class="zone-btn" data-zone="ND4">ND4</button>
+              <button type="button" class="zone-btn" data-zone="CD5">CD5</button>
+              <button type="button" class="zone-btn" data-zone="RIU">RIU</button>
+              <button type="button" class="zone-btn" data-zone="ECOM">ECOM</button>
+              <button type="button" class="zone-btn" data-zone="ND3">ND3</button>
+            </div>
+          </div>
+        </div>
 
-    <div id="resultat" aria-live="polite"></div>
+        <!-- CHECKLIST -->
+        <div>
+          <div class="checklist-header">
+            <div>
+              <div class="checklist-title">Checklist de propreté</div>
+              <div id="subtitleChecklist" class="checklist-sub">Choisis une zone pour charger les critères.</div>
+            </div>
+            <div id="checklistCount" class="badge-count">0 critère</div>
+          </div>
 
-    <footer>
-      Charte couleur appliquée : GXO Orange #FF3A00. PDF généré côté navigateur avec jsPDF.
-    </footer>
-  </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:34%;">Critère</th>
+                <th style="width:18%;">Évaluation</th>
+                <th style="width:28%;">Commentaire / action</th>
+                <th style="width:20%;">Photo (nom + aperçu)</th>
+              </tr>
+            </thead>
+            <tbody id="criteresContainer"></tbody>
+          </table>
+        </div>
 
-  <script>
-    // ===== Données et génération de l'UI =====
-    const criteres = [
-      "Sols",
-      "Murs et vitres",
-      "Sanitaires",
-      "Poubelles",
-      "Plans de travail",
-      "Matériel de nettoyage",
-      "Odeurs / ambiance"
-    ];
-    const valeurs = { "Bien": 2, "Moyen": 1, "Mauvais": 0 };
+        <!-- ACTIONS -->
+        <div class="actions">
+          <div class="btns">
+            <button type="button" class="btn btn-primary" id="btnCalcul">📊 Calculer le score</button>
+            <button type="button" class="btn btn-secondary" id="btnPdf">🖨️ Exporter en PDF</button>
+            <button type="button" class="btn btn-mail" id="btnMail" disabled>✉️ Envoyer par mail</button>
+          </div>
+          <div class="score-chip">
+            <div class="score-circle" id="scoreCircle">--</div>
+            <div>
+              <div class="score-status" id="scoreStatus">En attente</div>
+              <div class="score-detail" id="scoreDetail">Aucun calcul effectué</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    const container = document.getElementById('criteres');
-    const toId = s => s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+    <!-- DROITE -->
+    <aside class="card">
+      <div class="card-header">
+        <div class="card-title">Synthèse management</div>
+        <div class="card-sub">Vue globale – score, zone et non‑conformités.</div>
+      </div>
+      <div class="card-body">
+        <div class="meta-block">
+          <div class="meta-row">
+            <span class="meta-label">Auditeur</span>
+            <span class="meta-value" id="metaAuditeur">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Date</span>
+            <span class="meta-value" id="metaDate">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Zone</span>
+            <span class="meta-value" id="metaZone">—</span>
+          </div>
+        </div>
 
-    // On mémorise par critère: {file, dataURL}
-    const photos = new Map();
+        <div class="score-card">
+          <div class="score-main">
+            <div>
+              <h2 id="mainPercent">--%</h2>
+              <p id="mainLabel">En attente d'évaluation.</p>
+            </div>
+            <div class="score-ring">
+              <div class="score-ring-inner" id="ringInner">--</div>
+            </div>
+          </div>
+          <div class="score-scale">
+            <div class="score-ind" id="scoreIndicator"></div>
+          </div>
+          <div class="score-legend">Mauvais &lt;60% • Moyen 60–79% • Bien ≥80%</div>
+        </div>
 
-    criteres.forEach((c, idx) => {
-      const id = toId(c) + '-' + idx;
-      const card = document.createElement('div');
-      card.className = 'card critere';
-      card.innerHTML = `
-        <strong style="display:block; margin-bottom:8px; font-size:16px">${c}</strong>
+        <div class="nc-title">Non‑conformités / points d'attention</div>
+        <div class="nc-list" id="ncList">
+          <div style="padding:10px;text-align:center;color:#6b7280;">Aucune non‑conformité tant que le score n'est pas calculé.</div>
+        </div>
 
-        <label for="note-${id}">Évaluation</label>
-        <select class="note" id="note-${id}">
-          <option value="">-- Choisir --</option>
-          <option value="Bien">Bien</option>
-          <option value="Moyen">Moyen</option>
-          <option value="Mauvais">Mauvais</option>
-          <option value="NA">Non applicable</option>
-        </select>
+        <button type="button" class="btn btn-secondary btn-reset" id="btnReset">🔄 Réinitialiser l'audit</button>
+      </div>
+    </aside>
+  </main>
 
-        <div style="height:10px"></div>
+  <footer>Outil interne GXO – Audit propreté entrepôt – PDF & mail intégrés.</footer>
+</div>
 
-        <label for="comment-${id}">Commentaire (optionnel)</label>
-        <textarea id="comment-${id}" placeholder="Commentaire / anomalie / action à mener..."></textarea>
+<!-- HIDDEN PDF REPORT (génération pour jsPDF) -->
+<div id="pdfReport"></div>
 
-        <div style="height:10px"></div>
+<script>
+  // --- Données critères par zone ---
+  const ZONE_CHECKLISTS = {
+    // ND3 (inchangé)
+    ND3: [
+      { code: "ND3_DECH",  libelle: "Zone de déchargement" },
+      { code: "ND3_ST0",   libelle: "Zone de stockage 0" },
+      { code: "ND3_ST1",   libelle: "Zone de stockage 1" },
+      { code: "ND3_ST2",   libelle: "Zone de stockage 2" },
+      { code: "ND3_TRIEUR",libelle: "Zone trieur et buffer" },
+      { code: "ND3_EXP",   libelle: "Zone d'expédition et de déchargement" }
+    ],
+    // ND4 (inchangé)
+    ND4: [
+      { code: "ND4_DECH",  libelle: "Zone de déchargement" },
+      { code: "ND4_SPACE", libelle: "Zone space" },
+      { code: "ND4_TRIEUR",libelle: "Zone trieur" },
+      { code: "ND4_TK",    libelle: "Zone TK" },
+      { code: "ND4_M1",    libelle: "Zone mezza 1" },
+      { code: "ND4_M2",    libelle: "Zone mezza 2" }
+    ],
+    // CD5 (inchangé)
+    CD5: [
+      { code: "CD5_DECH",  libelle: "Zone de déchargement" },
+      { code: "CD5_EXP",   libelle: "Zone d'expédition" },
+      { code: "CD5_RACK",  libelle: "Zone rack" },
+      { code: "CD5_TRIEUR",libelle: "Zone trieur" },
+      { code: "CD5_M1",    libelle: "Zone mezza 1" },
+      { code: "CD5_M2",    libelle: "Zone mezza 2" }
+    ],
+    // RIU (REMPLACÉ selon ta demande)
+    RIU: [
+      { code: "RIU_DEB",  libelle: "Zone de déballage" },
+      { code: "RIU_S40",  libelle: "Zone de préparation (S 40)" },
+      { code: "RIU_S50",  libelle: "Zone de préparation (S 50)" },
+      { code: "RIU_S30",  libelle: "Zone de préparation (S 30)" },
+      { code: "RIU_S90",  libelle: "Zone de préparation (S 90)" },
+      { code: "RIU_LCH",  libelle: "Local de charge" }
+    ],
+    // ECOM (REMPLACÉ selon ta demande)
+    ECOM: [
+      { code: "ECOM_TRI",   libelle: "Zone de tri E com" },
+      { code: "ECOM_PALE",  libelle: "Zone de palettisation" },
+      { code: "ECOM_CONSO", libelle: "Zone conso & plv" },
+      { code: "ECOM_PICK",  libelle: "Zone de picking" }
+    ]
+  };
 
-        <label for="photo-${id}">Photo</label>
-        <input type="file" accept="image/*" id="photo-${id}">
-        <div class="preview-wrap" id="preview-${id}"></div>
-      `;
-      container.appendChild(card);
+  // Bien / Moyen / Mauvais
+  const VALEURS = { "Bien": 2, "Moyen": 1, "Mauvais": 0 };
 
-      // Gestion de l'aperçu
-      const input = card.querySelector(`#photo-${id}`);
-      const previewWrap = card.querySelector(`#preview-${id}`);
-      input.addEventListener('change', () => {
-        previewWrap.innerHTML = '';
-        const file = input.files && input.files[0];
-        photos.delete(id);
-        if (!file) return;
-        if (!file.type.startsWith('image/')) { alert('Le fichier sélectionné n’est pas une image.'); return; }
+  const el = {
+    auditeur: document.getElementById("auditeur"),
+    dateAudit: document.getElementById("dateAudit"),
+    zone: document.getElementById("zone"),
+    zoneBtns: document.querySelectorAll(".zone-btn"),
+    criteresContainer: document.getElementById("criteresContainer"),
+    checklistCount: document.getElementById("checklistCount"),
+    subtitleChecklist: document.getElementById("subtitleChecklist"),
+    btnCalcul: document.getElementById("btnCalcul"),
+    btnPdf: document.getElementById("btnPdf"),
+    btnMail: document.getElementById("btnMail"),
+    btnReset: document.getElementById("btnReset"),
+    scoreCircle: document.getElementById("scoreCircle"),
+    scoreStatus: document.getElementById("scoreStatus"),
+    scoreDetail: document.getElementById("scoreDetail"),
+    mainPercent: document.getElementById("mainPercent"),
+    mainLabel: document.getElementById("mainLabel"),
+    ringInner: document.getElementById("ringInner"),
+    scoreIndicator: document.getElementById("scoreIndicator"),
+    metaAuditeur: document.getElementById("metaAuditeur"),
+    metaDate: document.getElementById("metaDate"),
+    metaZone: document.getElementById("metaZone"),
+    ncList: document.getElementById("ncList"),
+    pdfReport: document.getElementById("pdfReport")
+  };
 
-        const reader = new FileReader();
-        reader.onload = e => {
-          const url = e.target.result;
-          const box = document.createElement('div');
-          box.className = 'preview';
-          const img = document.createElement('img');
-          img.src = url;
-          const legend = document.createElement('div');
-          legend.className = 'legend';
-          legend.innerHTML = `<span>${file.name}</span><span class="status">Aperçu</span>`;
-          box.appendChild(img); box.appendChild(legend);
-          box.addEventListener('click', () => window.open(url,'_blank'));
-          previewWrap.appendChild(box);
-          photos.set(id, { file, dataURL: url, critere: c });
-        };
-        reader.readAsDataURL(file);
-      });
-    });
+  // date du jour
+  el.dateAudit.valueAsDate = new Date();
 
-    // Préremplir la date
-    document.addEventListener('DOMContentLoaded', () => {
-      const dateInput = document.getElementById('dateAudit');
-      if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-    });
+  function formatDateFR(d) {
+    if (!d) return "—";
+    const dt = new Date(d);
+    if (isNaN(dt)) return "—";
+    return dt.toLocaleDateString("fr-FR");
+  }
 
-    // Récupérer toutes les données de l'écran
-    function collectData(){
-      const auditeur = document.getElementById('auditeur').value.trim();
-      const date = document.getElementById('dateAudit').value;
-      const zone = document.getElementById('zone').value;
+  // --- Construction checklist ---
+  function buildChecklist(zone) {
+    el.criteresContainer.innerHTML = "";
+    const liste = ZONE_CHECKLISTS[zone] || [];
+    el.checklistCount.textContent = liste.length + (liste.length > 1 ? " critères" : " critère");
 
-      const lignes = [];
-      let total = 0, max = 0, incomplets = false;
-
-      criteres.forEach((c, idx) => {
-        const id = toId(c) + '-' + idx;
-        const note = document.getElementById(`note-${id}`).value;
-        const comment = document.getElementById(`comment-${id}`).value.trim();
-        const photo = photos.get(id) || null;
-
-        if (note === "") incomplets = true;
-        if (note !== "" && note !== "NA") { total += valeurs[note]; max += 2; }
-
-        lignes.push({ id, critere: c, note, comment, photo }); // photo: {file, dataURL} ou null
-      });
-
-      const pourcentage = max > 0 ? Math.round((total / max) * 100) : 0;
-      let niveau = 'Insuffisant', bg='var(--bad)';
-      if (pourcentage >= 80) { niveau = 'Très bon'; bg='var(--gxo-orange)'; }
-      else if (pourcentage >= 60) { niveau = 'Acceptable'; bg='var(--warn)'; }
-
-      return {
-        auditeur, date, zone,
-        lignes, total, max, pourcentage, niveau, bg, incomplets
-      };
+    if (!liste.length) {
+      el.subtitleChecklist.textContent = "Aucune checklist configurée pour cette zone.";
+      return;
     }
+    el.subtitleChecklist.textContent =
+      "Checklist spécifique " + zone + " – " + liste.length + " critères.";
 
-    function calculer(){
-      const d = collectData();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Merci de renseigner le nom de l’auditeur, la date et la zone."); return; }
-      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
-      if (d.max === 0) { alert("Tous les critères sont non applicables."); return; }
+    liste.forEach((crit, index) => {
+      const tr = document.createElement("tr");
 
-      const res = document.getElementById('resultat');
-      res.style.background = getComputedStyle(document.documentElement).getPropertyValue(d.bg).trim();
-      res.innerHTML = `Auditeur : ${d.auditeur}<br>Date : ${d.date}<br>Zone : ${d.zone}<br><br>Score : ${d.pourcentage}%<br>${d.niveau}`;
-    }
+      const tdCrit = document.createElement("td");
+      tdCrit.innerHTML =
+        '<div class="critere-titre">'+(index+1)+'. '+crit.libelle+'</div>'+
+        '<span class="critere-zone">'+crit.code+'</span>';
 
-    // ===== PDF (jsPDF) =====
-    async function genererPDF(){
-      const d = collectData();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
+      const tdNote = document.createElement("td");
+      const select = document.createElement("select");
+      select.className = "note-select";
+      select.innerHTML =
+        '<option value="">— Choisir —</option>'+
+        '<option value="Bien">Bien</option>'+
+        '<option value="Moyen">Moyen</option>'+
+        '<option value="Mauvais">Mauvais</option>'+
+        '<option value="NA">Non applicable</option>';
+      select.addEventListener("change", function(){
+        this.classList.remove("note-bien","note-moyen","note-mauvais");
+        if (this.value === "Bien") this.classList.add("note-bien");
+        if (this.value === "Moyen") this.classList.add("note-moyen");
+        if (this.value === "Mauvais") this.classList.add("note-mauvais");
+      });
+      tdNote.appendChild(select);
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'mm', format:'a4' });
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
+      const tdCom = document.createElement("td");
+      const inputCom = document.createElement("input");
+      inputCom.type = "text";
+      inputCom.className = "comment";
+      inputCom.placeholder = "Commentaire / action";
+      tdCom.appendChild(inputCom);
 
-      // En-tête
-      doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.setTextColor(255,58,0); // GXO Orange
-      doc.text('Audit Propreté – GXO', pageW/2, 18, {align:'center'});
-
-      doc.setDrawColor(255,58,0); doc.setLineWidth(0.6);
-      doc.line(14, 22, pageW-14, 22);
-
-      // Infos
-      doc.setFontSize(12); doc.setTextColor(20);
-      let y = 30;
-      doc.text(`Auditeur : ${d.auditeur}`, 14, y); y+=7;
-      doc.text(`Date     : ${d.date}`,   14, y); y+=7;
-      doc.text(`Zone     : ${d.zone}`,   14, y); y+=10;
-
-      // Résumé score
-      doc.setFillColor(255,58,0); doc.setTextColor(255);
-      doc.roundedRect(14, y-6, pageW-28, 12, 3,3, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(14);
-      doc.text(`Score : ${d.pourcentage}% – ${d.niveau}`, pageW/2, y+2, {align:'center'});
-      y+=18;
-      doc.setTextColor(20); doc.setFont('helvetica','normal'); doc.setFontSize(12);
-
-      // Détails par critère + photo
-      const left = 14, right = pageW - 14, imgMaxW = right-left, imgMaxH = 80;
-
-      for (const l of d.lignes){
-        // Saut de page si besoin
-        if (y > pageH - 30) { doc.addPage(); y = 20; }
-
-        doc.setFont('helvetica','bold');
-        doc.text(l.critere, left, y); y+=6;
-
-        doc.setFont('helvetica','normal');
-        doc.text(`Évaluation : ${l.note || '-'}`, left, y);
-        if (l.comment) {
-          // Multi-line texte
-          const lines = doc.splitTextToSize(`Commentaire : ${l.comment}`, imgMaxW);
-          doc.text(lines, left, y+6);
-          y += 6 + lines.length*6;
-        } else { y += 8; }
-
-        // Image si présente (dataURL)
-        if (l.photo && l.photo.dataURL){
-          // Calcule ratio
-          const img = l.photo.dataURL;
-          try{
-            // On insère sous forme d'image (jsPDF gère base64 directement)
-            // On contraint la taille
-            const w = imgMaxW;
-            const h = Math.min(imgMaxH, w * 0.75); // ratio approx 4:3
-            if (y + h > pageH - 20) { doc.addPage(); y = 20; }
-            doc.addImage(img, 'JPEG', left, y, w, h); // format deviné, JPEG par défaut
-            y += h + 10;
-          }catch(e){
-            doc.setTextColor(200,0,0); doc.text('(Image non intégrée)', left, y); doc.setTextColor(20); y+=8;
-          }
+      const tdPhoto = document.createElement("td");
+      const zonePhoto = document.createElement("div");
+      zonePhoto.className = "photo-zone";
+      zonePhoto.innerHTML =
+        '<div>📎 Ajouter une photo</div>'+
+        '<div class="photo-name">Aucune photo sélectionnée</div>'+
+        '<div class="photo-preview"></div>';
+      const inputFile = document.createElement("input");
+      inputFile.type = "file";
+      inputFile.accept = "image/*";
+      inputFile.className = "photo-input";
+      inputFile.addEventListener("change", () => {
+        const nameLabel = zonePhoto.querySelector(".photo-name");
+        const preview = zonePhoto.querySelector(".photo-preview");
+        preview.innerHTML = "";
+        if (inputFile.files && inputFile.files.length > 0) {
+          const file = inputFile.files[0];
+          nameLabel.textContent = file.name;
+          const reader = new FileReader();
+          reader.onload = e => {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            preview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          nameLabel.textContent = "Aucune photo sélectionnée";
         }
-        y += 2;
+      });
+      zonePhoto.appendChild(inputFile);
+      tdPhoto.appendChild(zonePhoto);
+
+      tr.appendChild(tdCrit);
+      tr.appendChild(tdNote);
+      tr.appendChild(tdCom);
+      tr.appendChild(tdPhoto);
+      el.criteresContainer.appendChild(tr);
+    });
+  }
+
+  function selectZone(zone) {
+    el.zone.value = zone;
+    el.zoneBtns.forEach(btn=>{
+      btn.classList.toggle("active", btn.dataset.zone === zone);
+    });
+    buildChecklist(zone);
+  }
+
+  el.zone.addEventListener("change", e=>{
+    if (!e.target.value) return;
+    selectZone(e.target.value);
+  });
+  el.zoneBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>selectZone(btn.dataset.zone));
+  });
+
+  // --- Calcul du score Bien / Moyen / Mauvais ---
+  function calculerScore() {
+    const auditeur = el.auditeur.value.trim();
+    const date = el.dateAudit.value;
+    const zone = el.zone.value;
+
+    if (!auditeur || !date || !zone) {
+      alert("Merci de renseigner l'auditeur, la date et la zone avant calcul.");
+      return;
+    }
+
+    const rows = el.criteresContainer.querySelectorAll("tr");
+    if (!rows.length) {
+      alert("Sélectionne d'abord une zone pour charger la checklist.");
+      return;
+    }
+
+    let total = 0;
+    let max = 0;
+    let nbNA = 0;
+    const nc = [];
+
+    rows.forEach(row=>{
+      const select = row.querySelector(".note-select");
+      const comment = row.querySelector(".comment");
+      const titre = row.querySelector(".critere-titre").textContent;
+      const zoneTag = row.querySelector(".critere-zone").textContent;
+
+      const val = select.value;
+      if (!val) {
+        return;
+      }
+      if (val === "NA") {
+        nbNA++;
+        return;
       }
 
-      doc.save(`Audit_GXO_${d.date}_${d.zone}.pdf`);
-      // jsPDF: client-side PDF (images via dataURL)  [5](https://github.com/parallax/jsPDF)[6](https://artskydj.github.io/jsPDF/docs/module-addImage.html)
-    }
+      max += 2;
+      const pts = VALEURS[val];
+      total += pts;
 
-    // ===== CSV =====
-    function exportCSV(uploadMap){
-      const d = collectData();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
-
-      const headers = [
-        'Auditeur','Date','Zone','Score(%)','Niveau',
-        'Critère','Évaluation','Commentaire','Fichier','URL'
-      ];
-      const rows = [];
-
-      for (const l of d.lignes){
-        const fileName = l.photo?.file?.name || '';
-        const url = uploadMap?.get(l.id) || ''; // URL de téléchargement Firebase si dispo
-        rows.push([
-          d.auditeur, d.date, d.zone, d.pourcentage, d.niveau,
-          l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '),
-          fileName, url
-        ]);
-      }
-
-      let csv = headers.join(';') + '\n';
-      csv += rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(';')).join('\n');
-
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Audit_GXO_${d.date}_${d.zone}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
-    }
-
-    // ====== Firebase (Cloud) – à activer avec votre configuration ======
-    // 1) Crée un projet sur https://console.firebase.google.com/
-    // 2) Ajoute une appli Web et récupère le snippet "firebaseConfig"
-    // 3) Dans la console Firebase :
-    //    - Active Authentification > Méthodes de connexion > Anonyme
-    //    - Crée Firestore (mode production)
-    //    - Active Storage (règles: écriture réservée aux utilisateurs authentifiés)
-    // Docs: ajout Firebase Web, Auth anonyme, Storage upload, Firestore addDoc  [1](https://firebase.google.com/docs/web/setup)[2](https://firebase.google.com/docs/auth/web/anonymous-auth)[3](https://firebase.google.com/docs/storage/web/upload-files)[4](https://firebase.google.com/docs/firestore/manage-data/add-data)
-
-    // >>>>> COLLER ICI VOTRE CONFIG <<<<<
-    // Exemple:
-    // window.FIREBASE_CONFIG = {
-    //   apiKey: "xxxxx",
-    //   authDomain: "xxxxx.firebaseapp.com",
-    //   projectId: "xxxxx",
-    //   storageBucket: "xxxxx.appspot.com",
-    //   messagingSenderId: "xxxxx",
-    //   appId: "xxxxx"
-    // };
-
-  </script>
-
-  <!-- Import Firebase (modules ESM depuis le CDN gstatic) uniquement si config présente -->
-  <script type="module">
-    if (window.FIREBASE_CONFIG) {
-      // SDK v9+ modular
-      // Guide d'installation Web: initializeApp, Auth/Storage/Firestore  [1](https://firebase.google.com/docs/web/setup)
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-      import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-      import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
-
-      const app = initializeApp(window.FIREBASE_CONFIG);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-      const storage = getStorage(app);
-
-      // Connexion anonyme (pour autoriser les écritures)  [2](https://firebase.google.com/docs/auth/web/anonymous-auth)
-      signInAnonymously(auth).catch(console.error);
-
-      // Fonction globale appelée par le bouton
-      window.enregistrerCloud = async function(){
-        const d = collectData();
-        if (!d.auditeur || !d.date || !d.zone){ alert("Complète d’abord Auditeur / Date / Zone."); return; }
-        if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
-        if (d.max === 0) { alert("Tous les critères sont non applicables."); return; }
-
-        const timestamp = Date.now();
-        const folder = `audits/${d.date}_${d.zone}_${timestamp}`;
-        const uploadMap = new Map(); // idCritere -> url
-
-        // 1) Upload des photos dans Storage (uploadBytes puis getDownloadURL)  [3](https://firebase.google.com/docs/storage/web/upload-files)
-        for (const l of d.lignes){
-          if (l.photo && l.photo.file){
-            const cleanName = l.photo.file.name.replace(/[^\w\.\-]+/g,'_');
-            const path = `${folder}/${l.id}_${cleanName}`;
-            const r = ref(storage, path);
-            await uploadBytes(r, l.photo.file);
-            const url = await getDownloadURL(r);
-            uploadMap.set(l.id, url);
-          }
-        }
-
-        // 2) Enregistrer l’audit dans Firestore (addDoc)  [4](https://firebase.google.com/docs/firestore/manage-data/add-data)
-        const detail = d.lignes.map(l => ({
-          id: l.id,
-          critere: l.critere,
-          note: l.note || '',
-          comment: l.comment || '',
-          photoURL: uploadMap.get(l.id) || null
-        }));
-
-        const docRef = await addDoc(collection(db, 'audits'), {
-          auditeur: d.auditeur,
-          date: d.date,
-          zone: d.zone,
-          score: d.pourcentage,
-          niveau: d.niveau,
-          createdAt: serverTimestamp(),
-          folder,
-          detail
+      if (val === "Moyen" || val === "Mauvais") {
+        nc.push({
+          titre,
+          zone: zoneTag,
+          commentaire: comment.value.trim() || "Commentaire non renseigné",
+          gravite: val === "Mauvais" ? "Majeure" : "Mineure"
         });
+      }
+    });
 
-        alert(`Audit enregistré (ID: ${docRef.id}).\nLes photos sont stockées et liées à l’audit.`);
-
-        // 3) Proposer CSV avec URLs Cloud
-        exportCSV(uploadMap);
-      };
-    } else {
-      // Si la config n'est pas fournie, on désactive juste la partie Cloud
-      window.enregistrerCloud = function(){
-        alert("Configuration Firebase manquante.\n\nPour activer la sauvegarde cloud :\n1) Crée un projet Firebase (console.firebase.google.com)\n2) Copie le snippet 'firebaseConfig'\n3) Colle-le dans index.html (section // >>>>> COLLER ICI VOTRE CONFIG <<<<<)\n4) Recharge la page.");
-      };
+    if (!max) {
+      alert("Tous les critères sont NA ou non évalués, score impossible à calculer.");
+      return;
     }
-  </script>
+
+    const pourcentage = Math.round((total / max) * 100);
+
+    // META
+    el.metaAuditeur.textContent = auditeur;
+    el.metaDate.textContent = formatDateFR(date);
+    el.metaZone.textContent = zone;
+
+    // SCORE
+    el.scoreCircle.textContent = pourcentage + "%";
+    el.mainPercent.textContent = pourcentage + "%";
+    el.ringInner.textContent = pourcentage;
+    el.scoreIndicator.style.left = pourcentage + "%";
+
+    let statut = "MAUVAIS";
+    let couleur = "#ef4444";
+    let label = "Niveau de propreté insuffisant – plan d'action immédiat.";
+
+    if (pourcentage >= 80) {
+      statut = "BIEN";
+      couleur = "#10b981";
+      label = "Propreté maîtrisée, niveau conforme aux attentes.";
+    } else if (pourcentage >= 60) {
+      statut = "MOYEN";
+      couleur = "#f59e0b";
+      label = "Propreté correcte mais des écarts restent à traiter.";
+    }
+
+    el.scoreStatus.textContent = statut;
+    el.scoreStatus.style.color = couleur;
+    el.mainLabel.textContent = label;
+    el.scoreDetail.textContent =
+      "Score calculé sur " + rows.length + " critère(s), dont " + nbNA + " NA.";
+
+    // NC
+    el.ncList.innerHTML = "";
+    if (!nc.length) {
+      el.ncList.innerHTML =
+        '<div style="padding:10px;text-align:center;color:#166534;">Aucune non‑conformité détectée.</div>';
+    } else {
+      nc.forEach(item=>{
+        const div = document.createElement("div");
+        div.className = "nc-item";
+        div.innerHTML =
+          '<div>'+
+            '<div class="nc-label">'+item.titre+'</div>'+
+            '<div class="nc-comment">'+item.commentaire+'</div>'+
+            '<div class="nc-zone">'+item.zone+'</div>'+
+          '</div>'+
+          '<div class="nc-tag '+(item.gravite==="Majeure"?"nc-maj":"nc-min")+'">'+item.gravite+'</div>';
+        el.ncList.appendChild(div);
+      });
+    }
+
+    // Stocke les données pour le PDF
+    window.auditData = {
+      auditeur,
+      date: formatDateFR(date),
+      zone,
+      pourcentage,
+      statut,
+      nbNA,
+      rows: Array.from(rows)
+    };
+
+    el.btnMail.disabled = false;
+  }
+
+  el.btnCalcul.addEventListener("click", calculerScore);
+
+  // --- Génération du PDF lisible avec jsPDF ---
+  async function genererPdf() {
+    if (!window.auditData) {
+      alert("Calcule d'abord le score avant de générer le PDF.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+   
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    let yPos = margin;
+
+    // HEADER
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 25, "F");
+   
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont(undefined, "bold");
+    doc.text("RAPPORT D'AUDIT DE PROPRETÉ", margin, 12);
+    doc.setFontSize(10);
+    doc.text("GXO Logistics – Entrepôt", margin, 18);
+   
+    yPos = 30;
+
+    // INFOS AUDIT
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.setFont(undefined, "bold");
+    doc.text("Informations de l'audit", margin, yPos);
+    yPos += 6;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    doc.text("Auditeur : " + window.auditData.auditeur, margin, yPos);
+    yPos += 5;
+    doc.text("Date : " + window.auditData.date, margin, yPos);
+    yPos += 5;
+    doc.text("Zone : " + window.auditData.zone, margin, yPos);
+    yPos += 8;
+
+    // SCORE BANNER
+    doc.setFillColor(255, 58, 0);
+    doc.rect(margin, yPos, pageWidth - 2*margin, 15, "F");
+   
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont(undefined, "bold");
+    doc.text("SCORE : " + window.auditData.pourcentage + "%", margin + 5, yPos + 8);
+    doc.setFontSize(10);
+    doc.text("Statut : " + window.auditData.statut, margin + 60, yPos + 8);
+   
+    yPos += 20;
+
+    // CRITÈRES D'ÉVALUATION
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.setFont(undefined, "bold");
+    doc.text("Résultats de l'évaluation", margin, yPos);
+    yPos += 6;
+
+    doc.setFontSize(9);
+    doc.setFont(undefined, "normal");
+
+    let criteriaCount = 1;
+
+    for (const row of window.auditData.rows) {
+      // Vérifier si on a besoin d'une nouvelle page
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = margin;
+      }
+
+      const select = row.querySelector(".note-select");
+      const comment = row.querySelector(".comment");
+      const titre = row.querySelector(".critere-titre").textContent;
+      const zoneTag = row.querySelector(".critere-zone").textContent;
+      const noteVal = select.value;
+      const photoInput = row.querySelector(".photo-input");
+
+      if (!noteVal || noteVal === "NA") continue;
+
+      // Critère titre
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      doc.text(criteriaCount + ". " + titre, margin, yPos);
+      yPos += 4;
+
+      // Zone tag
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Code : " + zoneTag, margin + 2, yPos);
+      yPos += 4;
+
+      // Note
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(9);
+      if (noteVal === "Bien") {
+        doc.setTextColor(16, 185, 129);
+      } else if (noteVal === "Moyen") {
+        doc.setTextColor(245, 158, 11);
+      } else if (noteVal === "Mauvais") {
+        doc.setTextColor(239, 68, 68);
+      }
+      doc.text("Évaluation : " + noteVal, margin, yPos);
+      yPos += 4;
+
+      // Commentaire
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      const commentTxt = comment.value.trim() || "Aucun commentaire";
+      const lines = doc.splitTextToSize("Commentaire : " + commentTxt, pageWidth - 2*margin - 4);
+      doc.text(lines, margin + 2, yPos);
+      yPos += lines.length * 3 + 2;
+
+      // Photo
+      if (photoInput && photoInput.files && photoInput.files.length > 0) {
+        const file = photoInput.files[0];
+        const reader = new FileReader();
+        await new Promise((resolve) => {
+          reader.onload = async (e) => {
+            const imgData = e.target.result;
+            if (yPos > pageHeight - 50) {
+              doc.addPage();
+              yPos = margin;
+            }
+            const imgWidth = 50;
+            const imgHeight = 40;
+            doc.addImage(imgData, "JPEG", margin + 2, yPos, imgWidth, imgHeight);
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Photo : " + file.name, margin + imgWidth + 5, yPos + 2);
+            yPos += imgHeight + 4;
+            resolve();
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      yPos += 3;
+      criteriaCount++;
+    }
+
+    // FOOTER
+    yPos = pageHeight - 10;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Rapport généré automatiquement par l'outil GXO Audit Propreté", margin, yPos);
+
+    // Télécharger le PDF
+    doc.save("Audit_proprete_GXO.pdf");
+
+    // Stocker le PDF en base64 pour le mail
+    const pdfBlob = doc.output("blob");
+    window.pdfBlob = pdfBlob;
+    window.pdfBase64 = await blobToBase64(pdfBlob);
+
+    alert("PDF généré avec succès !");
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  el.btnPdf.addEventListener("click", genererPdf);
+
+  // --- Mail avec pièce jointe ---
+  el.btnMail.addEventListener("click", async () => {
+    if (!window.pdfBlob) {
+      alert("Génère d'abord le PDF.");
+      return;
+    }
+
+    const auditeur = el.auditeur.value.trim() || "Non renseigné";
+    const date = el.metaDate.textContent || "—";
+    const zone = el.metaZone.textContent || "—";
+    const scoreTxt = el.scoreCircle.textContent || "--%";
+    const statut = el.scoreStatus.textContent || "";
+
+    const destinataire = prompt("Adresse email du destinataire :", "manager@gxo.com");
+    if (!destinataire) return;
+
+    const sujet = encodeURIComponent("Audit propreté "+zone+" – "+scoreTxt+" ("+statut+")");
+    const corps = encodeURIComponent(
+"Bonjour,\n\n"+
+"Veuillez trouver ci‑joint le rapport d'audit de propreté complet.\n\n"+
+"─────────────────────────────────────\n"+
+"📊 SYNTHÈSE\n"+
+"─────────────────────────────────────\n\n"+
+"Zone : "+zone+"\n"+
+"Date : "+date+"\n"+
+"Auditeur : "+auditeur+"\n"+
+"Score global : "+scoreTxt+" ("+statut+")\n\n"+
+"─────────────────────────────────────\n\n"+
+"Le document PDF contient :\n"+
+"✓ Détail de chaque critère d'évaluation\n"+
+"✓ Commentaires et actions correctives\n"+
+"✓ Photos des zones auditées\n\n"+
+"Merci de prendre connaissance du rapport.\n\n"+
+"Cordialement,\n"+
+auditeur
+    );
+
+    window.location.href = "mailto:"+destinataire+"?subject="+sujet+"&body="+corps;
+
+    alert("Le PDF 'Audit_proprete_GXO.pdf' a été téléchargé.\nVous pouvez le joindre manuellement au mail qui s'est ouvert.\n\nOU utilisez un service (SendGrid, Mailgun, etc.).");
+  });
+
+  // --- Reset complet ---
+  el.btnReset.addEventListener("click", ()=>{
+    if (!confirm("Réinitialiser complètement l'audit ?")) return;
+
+    el.auditeur.value = "";
+    el.dateAudit.valueAsDate = new Date();
+    el.zone.value = "";
+    el.zoneBtns.forEach(btn=>btn.classList.remove("active"));
+    el.criteresContainer.innerHTML = "";
+    el.checklistCount.textContent = "0 critère";
+    el.subtitleChecklist.textContent = "Choisis une zone pour charger les critères.";
+
+    el.metaAuditeur.textContent = "—";
+    el.metaDate.textContent = "—";
+    el.metaZone.textContent = "—";
+
+    el.scoreCircle.textContent = "--";
+    el.scoreStatus.textContent = "En attente";
+    el.scoreStatus.style.color = "#4b5563";
+    el.scoreDetail.textContent = "Aucun calcul effectué";
+    el.mainPercent.textContent = "--%";
+    el.mainLabel.textContent = "En attente d'évaluation.";
+    el.ringInner.textContent = "--";
+    el.scoreIndicator.style.left = "0%";
+
+    el.ncList.innerHTML =
+      '<div style="padding:10px;text-align:center;color:#6b7280;">Aucune non‑conformité tant que le score n\'est pas calculé.</div>';
+
+    el.btnMail.disabled = true;
+    window.auditData = null;
+    window.pdfBlob = null;
+  });
+</script>
 </body>
 </html>
