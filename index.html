@@ -1,788 +1,964 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Audit Propreté – GXO</title>
+  <meta charset="UTF-8"/>
+  <title>GXO – Audit Propreté Entrepôt</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-  <!-- Styles -->
+  <!-- Fonts & jsPDF -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    :root{
-      /* Identité GXO + palette UI */
-      --gxo-orange:#FF3A00;
-      --gxo-orange-600:#ff531f;
-      --gxo-orange-700:#e24718;
-
-      --surface:#ffffff;
-      --surface-2:#f7fafc;
-      --text:#0f172a;
-      --muted:#64748b;
-      --border:#e2e8f0;
-
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --bad:#dc2626;
-
-      --radius:14px;
-      --shadow:0 10px 30px rgba(15,23,42,.08);
-      --container:1100px;
+    :root {
+      --red: #FF2800;
+      --red-glow: rgba(255,40,0,0.4);
+      --orange: #FF6B1A;
+      --black: #080A0E;
+      --surface: #0D1117;
+      --surface-2: #161B24;
+      --surface-3: #1E2530;
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(255,255,255,0.15);
+      --text-primary: #F0F4FF;
+      --text-secondary: #8B96A8;
+      --text-muted: #3D4650;
+      --green: #00E87D;
+      --yellow: #FFB800;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
-    *{ box-sizing:border-box }
-    html,body{ height:100% }
-    html:focus-within{ scroll-behavior:smooth }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html {scroll-behavior:smooth;}
 
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-      color:var(--text);
-      /* Fond avec dégradé doux + motifs subtils */
-      background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(255,58,0,.15), transparent 60%),
-        radial-gradient(900px 500px at 100% 0%, rgba(255,179,159,.18), transparent 55%),
-        linear-gradient(180deg, #fff, #fff);
-      background-attachment: fixed;
-      padding:32px 16px 120px;
+    body {
+      font-family: var(--font-body);
+      background: var(--black);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .container{ max-width: var(--container); margin:0 auto; }
-
-    h1{
-      text-align:center;
-      margin:0 0 18px 0;
-      font-size: clamp(24px, 4vw, 34px);
-      letter-spacing:.2px;
-      font-weight:800;
-      background: linear-gradient(90deg, var(--gxo-orange), #ff8f77);
-      -webkit-background-clip:text; background-clip:text; color:transparent;
+    /* Background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,40,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,40,0,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,40,0,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
     }
 
-    /* En-tête KPI collante */
-    .header-kpi{
-      position: sticky; top:10px; z-index: 20;
-      max-width: var(--container); margin: 0 auto 16px; padding: 10px 12px;
-      border-radius: 12px; backdrop-filter: blur(8px);
-      border:1px solid rgba(255,255,255,.6);
-      background: rgba(255,255,255,.7);
-      box-shadow: 0 4px 16px rgba(0,0,0,.04);
-    }
-    .kpi-row{ display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-    .kpi-chip{
-      display:inline-flex; align-items:center; gap:8px;
-      background:#fff; border:1px solid var(--border); padding:6px 10px;
-      border-radius:999px; color:#0f172a; font-weight:600; font-size:13px;
-    }
-    .kpi-chip .dot{ width:8px; height:8px; border-radius:999px; background:var(--gxo-orange); }
+    .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px 60px; }
 
-    .kpi-progress{
-      position:relative; flex:1; min-width: 220px; height:10px;
-      background: #eef2f7; border-radius:999px; overflow:hidden; border:1px solid var(--border);
+    /* HERO */
+    .hero {
+      padding: 32px 0 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;
     }
-    .kpi-progress > span{
-      position:absolute; left:0; top:0; bottom:0; width:0%;
-      background: linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-600));
-      transition: width .25s ease;
+    .hero-left { display:flex; align-items:center; gap:20px; }
+    .logo-block { position:relative; width:64px; height:64px; flex-shrink:0; }
+    .logo-block-inner {
+      width:100%; height:100%;
+      background: linear-gradient(135deg, var(--red), var(--orange));
+      border-radius:16px; display:flex; align-items:center; justify-content:center;
+      font-family:var(--font-display); font-size:28px; letter-spacing:1px; color:#fff;
+      position:relative; z-index:1; animation: logoFloat 4s ease-in-out infinite;
     }
-    .kpi-progress-label{ font-size:12px; color:var(--muted); margin-top:6px }
+    @keyframes logoFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    .logo-block::before {
+      content:''; position:absolute; inset:-6px; background:var(--red); border-radius:22px;
+      opacity:.2; filter:blur(12px); animation: logoGlow 4s ease-in-out infinite;
+    }
+    @keyframes logoGlow { 0%,100%{opacity:.15; transform:scale(1)} 50%{opacity:.35; transform:scale(1.1)} }
 
-    .card{
-      background: rgba(255,255,255,.9);
-      border-radius:var(--radius);
-      padding:18px;
-      margin-bottom:16px;
-      box-shadow:var(--shadow);
-      border:1px solid var(--border);
-    }
+    .hero-eyebrow{ font-family:var(--font-mono); font-size:10px; color:var(--red); text-transform:uppercase; letter-spacing:.2em; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+    .hero-eyebrow::before{ content:''; width:24px; height:2px; background:var(--red); display:inline-block; }
+    .hero-title{ font-family:var(--font-display); font-size:40px; letter-spacing:.04em; line-height:1; color:var(--text-primary); }
+    .hero-title span{ color:var(--red); }
 
-    .row{ display:grid; gap:14px; grid-template-columns: 1fr; }
-    @media (min-width: 780px){
-      .row{ grid-template-columns: repeat(3, 1fr); }
-    }
+    .hero-right{ display:flex; align-items:center; gap:12px; }
+    .status-pill{ display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:8px 16px; font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); }
+    .status-dot{ width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse-green 2s ease-in-out infinite; }
+    @keyframes pulse-green{ 0%,100%{box-shadow:0 0 6px var(--green)} 50%{box-shadow:0 0 18px var(--green), 0 0 30px rgba(0,232,125,0.3)} }
+    .version-tag{ font-family:var(--font-mono); font-size:10px; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:4px 10px; }
 
-    label{
-      display:block; font-weight:700; font-size:14px; margin-bottom:6px; color:#0b1220;
-    }
-    input, select, textarea{
-      width:100%; padding:12px 12px; font-size:14px; border-radius:10px;
-      border:1px solid var(--border); background:var(--surface-2); outline:none;
-      transition:border-color .2s, box-shadow .2s, background .2s;
-    }
-    textarea{ min-height:86px; resize:vertical; }
-    input::placeholder, textarea::placeholder{ color:#9CA3AF; }
-    input:focus, select:focus, textarea:focus{
-      border-color:var(--gxo-orange); box-shadow:0 0 0 3px rgba(255,58,0,.16); background:#fff;
-    }
+    /* LAYOUT */
+    .main-layout{ display:grid; grid-template-columns:1fr 340px; gap:20px; margin-top:24px; }
+    @media(max-width:1050px){ .main-layout{ grid-template-columns:1fr; } }
 
-    /* Accessibilité : cacher visuel mais garder focus */
-    .sr-only{
-      position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
-      clip: rect(0,0,0,0); white-space:nowrap; border:0;
-    }
+    /* PANEL */
+    .panel{ background:var(--surface); border:1px solid var(--border); border-radius:20px; overflow:hidden; position:relative; }
+    .panel-header{ padding:20px 24px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); }
+    .panel-num{ font-family:var(--font-mono); font-size:10px; color:var(--red); letter-spacing:.15em; margin-bottom:3px; }
+    .panel-title{ font-family:var(--font-display); font-size:22px; letter-spacing:.05em; color:var(--text-primary); }
+    .panel-badge{ font-family:var(--font-mono); font-size:11px; padding:5px 12px; border-radius:999px; background:rgba(255,40,0,0.1); color:var(--red); border:1px solid rgba(255,40,0,0.25); }
+    .panel-body{ padding:24px; display:flex; flex-direction:column; gap:20px; }
 
-    /* Critère */
-    .critere-title{
-      display:flex; align-items:center; gap:10px; margin: -6px 0 10px; font-weight:800;
-      font-size:16px;
-    }
-    .critere-title .tag{
-      font-size:12px; padding:4px 8px; border-radius:999px;
-      background:#f1f5f9; border:1px solid var(--border); color:#334155;
-    }
+    /* FORMS */
+    .form-row{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:14px; }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .field-label{ font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.15em; color:var(--text-secondary); }
+    .field-input{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:11px 14px; font-family:var(--font-body); font-size:13px; color:var(--text-primary); outline:none; transition:border-color .2s, box-shadow .2s; width:100%; }
+    .field-input::placeholder{ color:var(--text-muted); }
+    .field-input:focus{ border-color:var(--red); box-shadow:0 0 0 3px rgba(255,40,0,0.12); background:var(--surface-3); }
+    .field-input option{ background:var(--surface-2); }
 
-    .segment{
-      display:flex; gap:8px; flex-wrap:wrap;
-    }
-    .segment .pill{ position: relative; }
-    .segment input[type="radio"]{ position:absolute; opacity:0; inset:0; width:100%; height:100%; }
-    .segment label{
-      user-select:none; cursor:pointer; margin:0;
-      padding:10px 12px; border-radius:999px; border:1px solid var(--border);
-      background:#fff; color:#0f172a; font-weight:700; font-size:13px;
-      transition: all .15s ease;
-      display:inline-flex; align-items:center; gap:8px;
-    }
-    .segment label:hover{ transform: translateY(-1px); }
-    .segment input[type="radio"]:focus + label{ outline: 2px solid rgba(255,58,0,.35); outline-offset: 2px; }
-    .segment input[type="radio"]:checked + label{
-      border-color: transparent; color:#fff; box-shadow: 0 8px 20px rgba(255,58,0,.25);
-      background: linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-700));
-    }
-    .segment .pill-ok input:checked + label{ background: linear-gradient(90deg, #22c55e, #16a34a); }
-    .segment .pill-mid input:checked + label{ background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-    .segment .pill-bad input:checked + label{ background: linear-gradient(90deg, #ef4444, #dc2626); }
-    .segment .pill-na input:checked + label{ background: linear-gradient(90deg, #94a3b8, #64748b); }
+    /* ZONES */
+    .zone-section{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:16px 18px; }
+    .zone-section-title{ font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.15em; color:var(--text-secondary); margin-bottom:12px; }
+    .zone-buttons{ display:flex; flex-wrap:wrap; gap:8px; }
+    .zone-btn{ padding:9px 20px; border-radius:10px; border:1px solid var(--border); background:var(--surface-3); color:var(--text-secondary); font-family:var(--font-mono); font-size:12px; font-weight:700; letter-spacing:.1em; cursor:pointer; transition:all .2s cubic-bezier(.4,0,.2,1); position:relative; overflow:hidden; }
+    .zone-btn::before{ content:''; position:absolute; inset:0; background:linear-gradient(135deg, var(--red), var(--orange)); opacity:0; transition:opacity .2s; }
+    .zone-btn span{ position:relative; z-index:1; }
+    .zone-btn:hover{ border-color:var(--red); color:var(--text-primary); transform:translateY(-1px); }
+    .zone-btn:hover::before{ opacity:.15; }
+    .zone-btn.active{ background:linear-gradient(135deg, var(--red), var(--orange)); border-color:var(--red); color:#fff; box-shadow:0 8px 24px rgba(255,40,0,0.4), 0 0 0 1px rgba(255,40,0,0.6); transform:translateY(-2px); }
 
-    .require-comment{
-      border-left: 4px solid var(--bad);
-      padding-left: 10px; border-radius: 8px;
-      background: #fff5f5;
-    }
+    /* CHECKLIST */
+    .checklist-wrapper{ background:var(--surface-2); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+    .checklist-bar{ padding:13px 18px; background:var(--surface-3); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .checklist-bar-label{ font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); }
+    .checklist-bar-count{ font-family:var(--font-mono); font-size:11px; color:var(--red); background:rgba(255,40,0,0.1); border:1px solid rgba(255,40,0,0.2); padding:3px 10px; border-radius:999px; }
 
-    /* Boutons */
-    .btn{
-      width:100%; padding:14px 16px; font-size:16px; border:1px solid transparent;
-      border-radius:12px; cursor:pointer; margin-top:10px; font-weight:800;
-      transition: transform .02s ease, filter .2s ease, background .2s ease, color .2s ease, box-shadow .2s;
-    }
-    .btn:active{ transform:scale(.996); }
-    .btn-primary{ background: linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-700)); color:#fff; box-shadow: 0 8px 20px rgba(255,58,0,.25); }
-    .btn-primary:hover{ filter:brightness(0.98); }
-    .btn-outline{ background:#fff; color:var(--gxo-orange); border-color: var(--gxo-orange); }
-    .btn-outline:hover{ background:#FFF3EF; }
-    .btn-danger{ background:linear-gradient(90deg,#ef4444,#dc2626); color:#fff; }
-    .btn-bar{ display:grid; gap:10px; grid-template-columns:1fr; }
-    @media (min-width:900px){ .btn-bar{ grid-template-columns:1fr 1fr 1fr 1fr; } }
+    .empty-state{ padding:48px 24px; text-align:center; color:var(--text-muted); font-family:var(--font-mono); font-size:12px; }
+    .empty-icon{ font-size:36px; display:block; margin-bottom:12px; opacity:.5; }
 
-    /* Résultat */
-    #resultat{
-      margin-top:16px; padding:20px; border-radius:var(--radius);
-      text-align:center; font-size:18px; font-weight:800; color:#fff; box-shadow:var(--shadow);
-      background: linear-gradient(90deg, #ef4444, #dc2626);
-      border:1px solid rgba(255,255,255,.4);
+    table.audit-table{ width:100%; border-collapse:collapse; font-size:13px; }
+    .audit-table thead th{
+      background:var(--surface-3); padding:10px 14px; font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.12em; color:var(--text-muted); text-align:left; border-bottom:1px solid var(--border); white-space:nowrap;
     }
-    #resultat small{ display:block; margin-top:6px; opacity:.9; font-weight:600 }
+    .audit-table tbody tr{ border-bottom:1px solid var(--border); transition:background .15s; }
+    .audit-table tbody tr:last-child{ border-bottom:none; }
+    .audit-table tbody tr:hover{ background:var(--surface-3); }
+    .audit-table td{ padding:12px 14px; vertical-align:top; }
+    .crit-name{ font-weight:600; font-size:13px; color:var(--text-primary); margin-bottom:4px; }
+    .crit-code{ font-family:var(--font-mono); font-size:9px; color:var(--text-muted); background:var(--surface-3); border:1px solid var(--border); padding:2px 7px; border-radius:4px; display:inline-block; }
 
-    /* Helper */
-    .helper{ font-size:12px; color:#475569; margin-top:6px; }
+    .note-select{ width:100%; min-width:110px; background:var(--surface-3); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:var(--font-mono); font-size:11px; color:var(--text-secondary); outline:none; cursor:pointer; transition:all .2s; }
+    .note-select:focus{ border-color:var(--red); }
+    .note-select.val-bien{ border-color:var(--green); color:var(--green); background:rgba(0,232,125,0.06); box-shadow:inset 3px 0 0 var(--green); }
+    .note-select.val-moyen{ border-color:var(--yellow); color:var(--yellow); background:rgba(255,184,0,0.06); box-shadow:inset 3px 0 0 var(--yellow); }
+    .note-select.val-mauvais{ border-color:var(--red); color:var(--red); background:rgba(255,40,0,0.06); box-shadow:inset 3px 0 0 var(--red); }
+    .note-select option{ background:#1a1f2b; color:var(--text-primary); }
 
-    /* Barre outils (mode privé) */
-    .toolbar{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-    .switch{
-      display:inline-flex; align-items:center; gap:10px; user-select:none; cursor:pointer;
-      font-weight:700; color:#0b1220;
-    }
-    .switch input{ appearance:none; width:46px; height:26px; background:#e2e8f0; border-radius:999px; position:relative; outline:none; transition:.2s; }
-    .switch input:after{
-      content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:999px; box-shadow:0 1px 2px rgba(0,0,0,.15); transition:.2s;
-    }
-    .switch input:checked{ background:linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-700)); }
-    .switch input:checked:after{ transform: translateX(20px); }
+    .comment-input{ width:100%; background:var(--surface-3); border:1px solid transparent; border-radius:8px; padding:8px 10px; font-family:var(--font-body); font-size:12px; color:var(--text-primary); outline:none; transition:border-color .2s; }
+    .comment-input::placeholder{ color:var(--text-muted); }
+    .comment-input:focus{ border-color:var(--border-bright); }
 
-    /* Aperçu photo */
-    .preview-wrap{ margin-top:10px; display:flex; gap:12px; flex-wrap:wrap; }
-    .preview{
-      position:relative; width:220px; aspect-ratio:4/3;
-      border:1px solid var(--border); border-radius:12px; overflow:hidden;
-      background:#fff; box-shadow:0 6px 16px rgba(0,0,0,.06);
-    }
-    .preview img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .preview .legend{
-      position:absolute; left:0; right:0; bottom:0;
-      background:linear-gradient(transparent, rgba(0,0,0,.55));
-      color:#fff; font-size:12px; padding:6px 8px;
-      display:flex; justify-content:space-between; gap:6px; align-items:center;
-    }
-    .legend .status{ font-weight:800; }
-    .legend .remove{
-      appearance:none; border:none; border-radius:8px; padding:4px 8px; cursor:pointer;
-      background: rgba(0,0,0,.4); color:#fff; font-weight:800; font-size:12px;
-    }
-    .legend .remove:hover{ background: rgba(0,0,0,.6); }
+    .photo-drop{ width:100%; min-width:90px; border-radius:8px; border:1px dashed var(--text-muted); background:var(--surface-3); padding:10px 8px; text-align:center; cursor:pointer; position:relative; transition:all .2s; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:var(--text-muted); }
+    .photo-drop:hover{ border-color:var(--red); color:var(--red); }
+    .photo-drop.has-photo{ border-color:var(--green); color:var(--green); }
+    .photo-drop input[type="file"]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+    .photo-thumb{ width:44px; height:36px; border-radius:5px; object-fit:cover; border:1px solid var(--border); display:none; }
+    .photo-thumb.visible{ display:block; }
 
-    /* Toast simple */
-    .toast{
-      position: fixed; left:50%; bottom:22px; transform:translateX(-50%);
-      background:#0b1220; color:#fff; padding:12px 14px; border-radius:10px;
-      box-shadow: 0 8px 20px rgba(15,23,42,.25);
-      z-index: 50; font-weight:700; font-size:14px; opacity:0; pointer-events:none;
-      transition: opacity .2s ease, transform .2s ease;
-    }
-    .toast.show{ opacity:1; transform: translate(-50%, -4px); }
+    /* ACTIONS */
+    .action-bar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding-top:4px; border-top:1px solid var(--border); }
+    .btn-group{ display:flex; gap:10px; flex-wrap:wrap; }
+    .btn{ display:inline-flex; align-items:center; gap:8px; border:none; border-radius:10px; padding:11px 20px; font-family:var(--font-body); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; cursor:pointer; transition:all .2s cubic-bezier(.4,0,.2,1); position:relative; overflow:hidden; }
+    .btn:active{ transform:scale(.97); }
+    .btn:disabled{ opacity:.35; cursor:not-allowed; pointer-events:none; }
+    .btn-primary{ background:linear-gradient(135deg, var(--red), var(--orange)); color:#fff; box-shadow:0 8px 24px rgba(255,40,0,0.4); }
+    .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 32px rgba(255,40,0,0.55); }
+    .btn-secondary{ background:var(--surface-3); border:1px solid var(--border-bright); color:var(--text-primary); }
+    .btn-secondary:hover{ background:var(--surface-2); border-color:rgba(255,255,255,0.25); transform:translateY(-1px); }
+    .btn-blue{ background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#fff; box-shadow:0 8px 24px rgba(37,99,235,0.35); }
+    .btn-blue:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(37,99,235,0.5); }
 
-    /* Footer */
-    footer{ text-align:center; color:#475569; font-size:12px; margin-top:24px; opacity:.95; }
+    /* SCORE RIGHT PANEL */
+    .synth-panel{ display:flex; flex-direction:column; gap:0; }
+    .meta-section{ padding:20px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:10px; }
+    .meta-row{ display:flex; justify-content:space-between; align-items:center; }
+    .meta-key{ font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.15em; color:var(--text-muted); }
+    .meta-val{ font-size:12px; font-weight:600; color:var(--text-primary); font-family:var(--font-body); }
 
-    /* Impression A4 propre */
-    @media print {
-      body{ background:#fff !important; padding:0; }
-      .header-kpi, .btn, .toolbar{ display:none !important; }
-      .card{ box-shadow:none !important; border-color:#ddd; }
-      #resultat{ color:#000; border:1px solid #ddd; background:#fff; }
-      .preview{ border-color:#ccc; }
-    }
+    .score-display{ padding:24px 20px; background:var(--surface-2); border-bottom:1px solid var(--border); position:relative; overflow:hidden; }
+    .score-display::before{ content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; background: radial-gradient(circle, rgba(255,40,0,0.15), transparent 70%); pointer-events:none; }
+    .score-big{ font-family:var(--font-display); font-size:72px; line-height:1; letter-spacing:.02em; color:var(--text-primary); transition: color .5s; }
+    .score-big.green{ color:var(--green); text-shadow:0 0 40px rgba(0,232,125,0.3); }
+    .score-big.yellow{ color:var(--yellow); text-shadow:0 0 40px rgba(255,184,0,0.3); }
+    .score-big.red{ color:var(--red); text-shadow:0 0 40px rgba(255,40,0,0.4); }
+    .score-status-label{ font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.2em; color:var(--text-secondary); margin-top:4px; }
+    .score-status-label.green{ color:var(--green); }
+    .score-status-label.yellow{ color:var(--yellow); }
+    .score-status-label.red{ color:var(--red); }
+    .score-desc{ font-size:12px; color:var(--text-secondary); margin-top:8px; line-height:1.5; font-weight:300; }
+
+    .score-bar-wrap{ margin-top:16px; }
+    .score-bar-track{ width:100%; height:4px; background:var(--surface-3); border-radius:999px; overflow:visible; position:relative; }
+    .score-bar-fill{ height:100%; border-radius:999px; background: linear-gradient(90deg, var(--red), var(--yellow), var(--green)); width:0%; transition: width .8s cubic-bezier(.4,0,.2,1); position:relative; }
+    .score-bar-fill::after{ content:''; position:absolute; right:-4px; top:-4px; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 0 10px rgba(255,255,255,0.5); border:2px solid var(--surface); }
+    .score-bar-labels{ display:flex; justify-content:space-between; margin-top:6px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); }
+
+    /* NC LIST */
+    .nc-section{ padding:20px; border-bottom:1px solid var(--border); flex:1; }
+    .nc-section-title{ font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.15em; color:var(--text-secondary); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+    .nc-count-badge{ background:rgba(255,40,0,0.15); color:var(--red); border:1px solid rgba(255,40,0,0.3); border-radius:999px; padding:2px 8px; font-size:10px; }
+    .nc-list{ display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--surface-3) transparent; }
+    .nc-list::-webkit-scrollbar{ width:4px; }
+    .nc-list::-webkit-scrollbar-track{ background:transparent; }
+    .nc-list::-webkit-scrollbar-thumb{ background:var(--surface-3); border-radius:999px; }
+    .nc-item{ background:var(--surface-3); border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; animation: slideIn .3s ease forwards; }
+    @keyframes slideIn{ from{opacity:0; transform:translateX(10px)} to{opacity:1; transform:translateX(0)} }
+    .nc-item.maj{ border-left:3px solid var(--red); }
+    .nc-item.min{ border-left:3px solid var(--yellow); }
+    .nc-item-title{ font-size:11px; font-weight:600; color:var(--text-primary); margin-bottom:3px; }
+    .nc-item-comment{ font-size:11px; color:var(--text-secondary); font-weight:300; }
+    .nc-item-code{ font-family:var(--font-mono); font-size:9px; color:var(--text-muted); margin-top:3px; }
+    .nc-tag{ font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:.08em; padding:3px 8px; border-radius:6px; white-space:nowrap; flex-shrink:0; }
+    .nc-tag.maj{ background:rgba(255,40,0,0.15); color:var(--red); border:1px solid rgba(255,40,0,0.3); }
+    .nc-tag.min{ background:rgba(255,184,0,0.15); color:var(--yellow); border:1px solid rgba(255,184,0,0.3); }
+
+    /* FOOTER */
+    footer{ margin-top:40px; padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .footer-left{ font-family:var(--font-mono); font-size:10px; color:var(--text-muted); display:flex; align-items:center; gap:10px; }
+    .footer-left::before{ content:''; width:16px; height:2px; background:var(--red); display:inline-block; }
+    .footer-right{ font-family:var(--font-mono); font-size:10px; color:var(--text-muted); display:flex; gap:16px; }
+
+    /* ANIMS & ROW COLORS */
+    @keyframes fadeUp{ from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:translateY(0)} }
+    .hero{ animation: fadeUp .6s ease forwards; }
+    .panel{ animation: fadeUp .6s ease forwards; }
+    .panel:nth-child(2){ animation-delay:.08s; }
+    .row-bien td{ background:rgba(0,232,125,0.03); }
+    .row-mauvais td{ background:rgba(255,40,0,0.04); }
+    .row-moyen td{ background:rgba(255,184,0,0.03); }
+
+    /* Toast */
+    .toast{ position:fixed; bottom:30px; right:30px; background:var(--surface-2); border:1px solid var(--border-bright); border-radius:14px; padding:16px 20px; display:flex; align-items:center; gap:12px; font-size:13px; color:var(--text-primary); box-shadow:0 20px 50px rgba(0,0,0,0.5); z-index:9999; opacity:0; transform:translateY(12px); transition:all .3s cubic-bezier(.4,0,.2,1); pointer-events:none; max-width:320px; }
+    .toast.show{ opacity:1; transform:translateY(0); }
+    .toast-icon{ font-size:20px; flex-shrink:0; }
+    .toast-title{ font-weight:600; margin-bottom:2px; }
+    .toast-msg{ font-size:11px; color:var(--text-secondary); }
   </style>
-
-  <!-- jsPDF pour le PDF (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>Audit Propreté – GXO</h1>
 
-    <!-- En-tête KPI (injection JS) -->
+<div class="app">
 
-    <!-- IDENTIFICATION -->
-    <div class="card" aria-labelledby="ident-title">
-      <h2 id="ident-title" class="sr-only">Informations d'identification</h2>
-
-      <!-- Barre outils -->
-      <div class="toolbar">
-        <label class="switch" title="Ne rien mémoriser sur cet appareil">
-          <input id="privateMode" type="checkbox" checked>
-          <span>Mode privé (ne pas sauvegarder)</span>
-        </label>
-        <button class="btn btn-danger" id="resetAll">Nouveau / Réinitialiser</button>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="auditeur">Nom de l’auditeur</label>
-          <input type="text" id="auditeur" placeholder="Ex : Walid Adjout" autocomplete="name">
-          <div class="helper">Saisir le prénom + nom de l’auditeur.</div>
-        </div>
-
-        <div>
-          <label for="dateAudit">Date de l’audit</label>
-          <input type="date" id="dateAudit">
-        </div>
-
-        <div>
-          <label for="zone">Zone</label>
-          <select id="zone">
-            <option value="">-- Sélectionner la zone --</option>
-            <option value="ND4">ND4</option>
-            <option value="CD5">CD5</option>
-            <option value="RIU">RIU</option>
-            <option value="ECOM">ECOM</option>
-          </select>
-        </div>
+  <!-- HEADER -->
+  <header class="hero">
+    <div class="hero-left">
+      <div class="logo-block"><div class="logo-block-inner">GXO</div></div>
+      <div class="hero-titles">
+        <div class="hero-eyebrow">QSE · Entrepôt · 2026</div>
+        <h1 class="hero-title">AUDIT <span>PROPRETÉ</span></h1>
       </div>
     </div>
-
-    <!-- CRITÈRES (injection JS) -->
-    <div id="criteres" aria-live="polite"></div>
-
-    <!-- ACTIONS -->
-    <div class="btn-bar" role="group" aria-label="Actions">
-      <button class="btn btn-primary" id="btnCalc">Calculer le score</button>
-      <button class="btn btn-outline" id="btnPdf">Générer le PDF</button>
-      <button class="btn btn-outline" id="btnCsv">Exporter CSV</button>
-      <button class="btn btn-outline" id="btnPrint">Imprimer</button>
+    <div class="hero-right">
+      <div class="status-pill"><div class="status-dot"></div> Système actif</div>
+      <div class="version-tag">v2.1</div>
     </div>
+  </header>
 
-    <div id="resultat" aria-live="polite"></div>
+  <!-- LAYOUT -->
+  <div class="main-layout">
 
-    <footer>
-      Charte couleur GXO (#FF3A00). PDF et CSV générés côté navigateur. Données non transmises.
-    </footer>
-  </div>
-
-  <!-- Script principal -->
-  <script>
-    /* =============================
-       Données & constantes
-    ============================= */
-    const criteres = [
-      "Propreté des zones de travail",
-      "Organisation des allées de circulation",
-      "Conformité du stockage",
-      "Qualité du tri des déchets",
-      "Poubelles non débordantes",
-      "Bacs remis à leur place après utilisation",
-      "Chariots remis en place après utilisation"
-    ];
-    // Barème
-    const valeurs = { "Bon": 2, "Moyen": 1, "Mauvais": 0 };
-    const LS_KEY = 'audit_proprete_gxo_v2';
-
-    const container = document.getElementById('criteres');
-    const toId = s => s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-
-    // Mémoire des photos par critère (volatile)
-    const photos = new Map();
-
-    // Mode privé (par défaut activé)
-    const privateModeEl = document.getElementById('privateMode');
-    const isPrivate = () => privateModeEl.checked === true;
-
-    /* =============================
-       UI dynamique (KPI + critères)
-    ============================= */
-    function ensureKPI() {
-      if (document.querySelector('.header-kpi')) return;
-      const wrap = document.createElement('div');
-      wrap.className = 'header-kpi';
-      wrap.innerHTML = `
-        <div class="kpi-row">
-          <div class="kpi-chip"><span class="dot"></span> <span id="kpi-done">0</span>/<span id="kpi-total">0</span> évaluations</div>
-          <div class="kpi-chip">Score <span id="kpi-score">0%</span></div>
-          <div class="kpi-chip">NA&nbsp;<span id="kpi-na">0</span> • Mauvais&nbsp;<span id="kpi-bad">0</span></div>
+    <!-- LEFT -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <div class="panel-num">01 — Configuration</div>
+          <div class="panel-title">Paramètres d'audit</div>
         </div>
-        <div class="kpi-progress" aria-hidden="true"><span id="kpi-bar"></span></div>
-        <div class="kpi-progress-label" id="kpi-label"></div>
-      `;
-      document.querySelector('.container').prepend(wrap);
-    }
+        <div class="panel-badge" id="badgeCount">0 critère</div>
+      </div>
 
-    function renderCriteres(saved = null){
-      container.innerHTML = '';
-      criteres.forEach((c, idx) => {
-        const id = `${toId(c)}-${idx}`;
-        const card = document.createElement('div');
-        card.className = 'card critere';
-
-        const savedRow = saved?.rows?.find(r => r.id === id);
-
-        card.innerHTML = `
-          <div class="critere-title">
-            <div>${idx+1}. ${c}</div>
-            <span class="tag">Critère</span>
+      <div class="panel-body">
+        <!-- Infos -->
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label" for="auditeur">Auditeur responsable</label>
+            <input class="field-input" id="auditeur" type="text" placeholder="ex : Walid Adjout"/>
           </div>
+          <div class="field">
+            <label class="field-label" for="dateAudit">Date d'audit</label>
+            <input class="field-input" id="dateAudit" type="date"/>
+          </div>
+        </div>
 
-          <fieldset class="segment" role="radiogroup" aria-label="Évaluation pour ${c}">
-            <legend class="sr-only">Évaluation</legend>
+        <!-- Zones -->
+        <div class="zone-section">
+          <div class="zone-section-title">Sélection de la zone</div>
+          <div class="zone-buttons">
+            <button class="zone-btn" data-zone="ND4"><span>ND4</span></button>
+            <button class="zone-btn" data-zone="CD5"><span>CD5</span></button>
+            <button class="zone-btn" data-zone="RIU"><span>RIU</span></button>
+            <button class="zone-btn" data-zone="ECOM"><span>ECOM</span></button>
+            <button class="zone-btn" data-zone="ND3"><span>ND3</span></button>
+          </div>
+        </div>
 
-            <div class="pill pill-ok">
-              <input class="sr-only" type="radio" id="note-${id}-ok" name="note-${id}" value="Bon">
-              <label for="note-${id}-ok">Bon</label>
+        <div class="section-divider">Checklist de contrôle</div>
+
+        <!-- Checklist -->
+        <div class="checklist-wrapper">
+          <div class="checklist-bar">
+            <span class="checklist-bar-label" id="checklistLabel">Sélectionne une zone pour charger les critères</span>
+            <span class="checklist-bar-count" id="checklistCount" style="display:none">0</span>
+          </div>
+          <div id="tableWrap">
+            <div class="empty-state">
+              <span class="empty-icon">🏭</span>
+              Aucune zone sélectionnée<br/>Clique sur une zone pour commencer l'audit.
             </div>
+          </div>
+        </div>
 
-            <div class="pill pill-mid">
-              <input class="sr-only" type="radio" id="note-${id}-mid" name="note-${id}" value="Moyen">
-              <label for="note-${id}-mid">Moyen</label>
+        <!-- Actions -->
+        <div class="action-bar">
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btnCalcul"><span>📊</span> Calculer le score</button>
+            <button class="btn btn-secondary" id="btnPdf"><span>🖨️</span> Exporter PDF</button>
+            <button class="btn btn-blue" id="btnMail" disabled><span>✉️</span> Envoyer par mail</button>
+          </div>
+          <div class="score-chip">
+            <div class="score-chip-num" id="chipScore">--%</div>
+            <div>
+              <div class="score-chip-status" id="chipStatus" style="color:var(--text-muted)">En attente</div>
+              <div class="score-chip-label" id="chipDetail">Aucun calcul</div>
             </div>
+          </div>
+        </div>
 
-            <div class="pill pill-bad">
-              <input class="sr-only" type="radio" id="note-${id}-bad" name="note-${id}" value="Mauvais">
-              <label for="note-${id}-bad">Mauvais</label>
-            </div>
+      </div>
+    </section>
 
-            <div class="pill pill-na">
-              <input class="sr-only" type="radio" id="note-${id}-na" name="note-${id}" value="NA">
-              <label for="note-${id}-na">N/A</label>
-            </div>
-          </fieldset>
+    <!-- RIGHT -->
+    <aside class="panel synth-panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <div class="panel-num">02 — Synthèse</div>
+          <div class="panel-title">Management</div>
+        </div>
+      </div>
 
-          <div style="height:10px"></div>
+      <!-- Meta -->
+      <div class="meta-section">
+        <div class="meta-row"><span class="meta-key">Auditeur</span><span class="meta-val" id="metaAuditeur">—</span></div>
+        <div class="meta-row"><span class="meta-key">Date</span><span class="meta-val" id="metaDate">—</span></div>
+        <div class="meta-row"><span class="meta-key">Zone</span><span class="meta-val" id="metaZone">—</span></div>
+      </div>
 
-          <label for="comment-${id}">Commentaire <span style="font-weight:600;color:#ef4444">(obligatoire si "Mauvais")</span></label>
-          <textarea id="comment-${id}" placeholder="Commentaire / anomalie / action à mener…"></textarea>
+      <!-- Big score -->
+      <div class="score-display">
+        <div class="score-big" id="bigScore">--%</div>
+        <div class="score-status-label" id="bigStatus">En attente d'évaluation</div>
+        <div class="score-desc" id="bigDesc">Lance le calcul pour afficher le résultat de l'audit.</div>
 
-          <div style="height:10px"></div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="scoreFill"></div>
+          </div>
+          <div class="score-bar-labels">
+            <span>Mauvais &lt;70%</span>
+            <span>Moyen 70–89%</span>
+            <span>Bien ≥90%</span>
+          </div>
+        </div>
+      </div>
 
-          <label for="photo-${id}">Photo</label>
-          <input type="file" accept="image/*" id="photo-${id}">
-          <div class="preview-wrap" id="preview-${id}"></div>
-        `;
-        container.appendChild(card);
+      <!-- NC -->
+      <div class="nc-section">
+        <div class="nc-section-title">
+          <span>Non-conformités</span>
+          <span class="nc-count-badge" id="ncBadge">0</span>
+        </div>
+        <div class="nc-list" id="ncList">
+          <div class="nc-empty">Aucune non‑conformité.<br/>Lance le calcul pour analyser.</div>
+        </div>
+      </div>
 
-        // Restauration (uniquement si mode privé désactivé ET des données existent)
-        if (!isPrivate() && savedRow?.note){
-          const inp = card.querySelector(`input[name="note-${id}"][value="${savedRow.note}"]`);
-          if (inp) inp.checked = true;
-        }
-        if (!isPrivate() && savedRow?.comment){
-          card.querySelector(`#comment-${id}`).value = savedRow.comment;
-        }
+      <!-- Actions -->
+      <div class="panel-actions">
+        <button class="btn btn-secondary" id="btnReset" style="font-size:11px;">🔄 Réinitialiser l'audit</button>
+      </div>
+    </aside>
 
-        // Aperçu photo + suppression
-        const input = card.querySelector(`#photo-${id}`);
-        const previewWrap = card.querySelector(`#preview-${id}`);
-        input.addEventListener('change', () => {
-          previewWrap.innerHTML = '';
-          const file = input.files && input.files[0];
-          photos.delete(id);
-          if (!file) return;
-          if (!file.type.startsWith('image/')) { alert('Le fichier sélectionné n’est pas une image.'); return; }
+  </div><!-- /main-layout -->
 
-          const reader = new FileReader();
-          reader.onload = e => {
-            const url = e.target.result;
-            const box = document.createElement('div');
-            box.className = 'preview';
-            const img = document.createElement('img');
-            img.src = url;
-            const legend = document.createElement('div');
-            legend.className = 'legend';
-            legend.innerHTML = `<span>${file.name}</span><button type="button" class="remove" title="Retirer la photo">Retirer</button>`;
-            legend.querySelector('.remove').addEventListener('click', () => {
-              // Nettoyage : input, preview, mémoire
-              input.value = '';
-              photos.delete(id);
-              previewWrap.innerHTML = '';
-              toast('🗑️ Photo retirée');
-            });
-            box.appendChild(img); box.appendChild(legend);
-            previewWrap.appendChild(box);
-            photos.set(id, { file, dataURL: url, critere: c });
-          };
-          reader.readAsDataURL(file);
-        });
+  <footer>
+    <div class="footer-left">GXO Logistics — Outil interne QSE propreté entrepôt</div>
+    <div class="footer-right">
+      <span>PDF intégré</span>
+      <span>Mail automatisé</span>
+      <span>Rapport instantané</span>
+    </div>
+  </footer>
 
-        // Surbrillance si "Mauvais"
-        card.addEventListener('change', (e) => {
-          if (e.target.name === `note-${id}`) {
-            const val = e.target.value;
-            const commentArea = card.querySelector(`#comment-${id}`);
-            if (val === 'Mauvais') {
-              commentArea.classList.add('require-comment');
-              commentArea.focus({ preventScroll: false });
-            } else {
-              commentArea.classList.remove('require-comment');
-            }
-            compute(); saveLocalThrottled();
-          }
-        });
-        card.querySelector(`#comment-${id}`).addEventListener('input', () => { compute(); saveLocalThrottled(); });
-      });
-    }
+</div><!-- /app -->
 
-    /* =============================
-       Collecte & calcul
-    ============================= */
-    function collectData(){
-      const auditeur = document.getElementById('auditeur').value.trim();
-      const date = document.getElementById('dateAudit').value;
-      const zone = document.getElementById('zone').value;
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toastIcon">✅</div>
+  <div>
+    <div class="toast-title" id="toastTitle">Succès</div>
+    <div class="toast-msg" id="toastMsg"></div>
+  </div>
+</div>
 
-      const lignes = [];
-      let total = 0, max = 0, incomplets = false, nNA = 0, nBad = 0, done = 0;
+<script>
+/* ── DATA ───────────────────────────────── */
+const ZONES = {
+  ND3: [
+    // supprimé: ND3_DECH
+    { code:"ND3_ST0",   libelle:"Zone de stockage 0" },
+    { code:"ND3_M1",    libelle:"Zone de mezzanine 1" }, // ex ST1
+    { code:"ND3_M2",    libelle:"Zone de mezzanine 2" }, // ex ST2
+    { code:"ND3_TRIEUR",libelle:"Zone trieur et buffer" },
+    { code:"ND3_EXP",   libelle:"Zone d'expédition et de déchargement" }
+  ],
+  ND4: [
+    { code:"ND4_DECH",  libelle:"Zone de déchargement" },
+    { code:"ND4_SPACE", libelle:"Zone space" },
+    { code:"ND4_TRIEUR",libelle:"Zone trieur" },
+    { code:"ND4_TK",    libelle:"Zone TK" },
+    { code:"ND4_M1",    libelle:"Zone mezza 1" },
+    { code:"ND4_M2",    libelle:"Zone mezza 2" },
+    { code:"ND4_DEB",   libelle:"Zone de déballage" },
+    { code:"ND4_REINT", libelle:"Zone de réintégration" },
+    { code:"ND4_ETAG",  libelle:"Zone d'étagère" }
+  ],
+  CD5: [
+    { code:"CD5_DECH",  libelle:"Zone de déchargement" },
+    { code:"CD5_EXP",   libelle:"Zone d'expédition" },
+    { code:"CD5_RACK",  libelle:"Zone rack" },
+    { code:"CD5_TRIEUR",libelle:"Zone trieur" },
+    { code:"CD5_M1",    libelle:"Zone mezza 1" },
+    { code:"CD5_M2",    libelle:"Zone mezza 2" }
+  ],
+  RIU: [
+    { code:"RIU_RACK",  libelle:"Zone rack" },
+    { code:"RIU_SECT",  libelle:"Zone de secteurs" },
+    { code:"RIU_EXP",   libelle:"Zone d'expédition" }
+  ],
+  ECOM: [
+    { code:"ECOM_TRI",        libelle:"Zone de Tri E com" },
+    { code:"ECOM_PALET",      libelle:"Zone de paletisation" },
+    { code:"ECOM_CONSO_PLV",  libelle:"Zone de conso & plv" },
+    { code:"ECOM_RACK",       libelle:"Zone de rack" }
+  ]
+};
 
-      criteres.forEach((c, idx) => {
-        const id = `${toId(c)}-${idx}`;
-        const sel = document.querySelector(`input[name="note-${id}"]:checked`);
-        const note = sel ? sel.value : "";
-        const comment = document.getElementById(`comment-${id}`).value.trim();
-        const photo = photos.get(id) || null;
+const SCORES = { "Bien":2, "Moyen":1, "Mauvais":0 };
 
-        if (note) done++;
-        if (note === "") incomplets = true;
-        if (note === "Mauvais") nBad++;
-        if (note === "NA") nNA++;
+/* ── ELEMENTS ───────────────────────────── */
+const $ = id => document.getElementById(id);
 
-        if (note !== "" && note !== "NA") { total += valeurs[note]; max += 2; }
+const E = {
+  auditeur: $("auditeur"),
+  dateAudit: $("dateAudit"),
+  badgeCount: $("badgeCount"),
+  checklistLabel: $("checklistLabel"),
+  checklistCount: $("checklistCount"),
+  tableWrap: $("tableWrap"),
+  btnCalcul: $("btnCalcul"),
+  btnPdf: $("btnPdf"),
+  btnMail: $("btnMail"),
+  btnReset: $("btnReset"),
+  chipScore: $("chipScore"),
+  chipStatus: $("chipStatus"),
+  chipDetail: $("chipDetail"),
+  metaAuditeur: $("metaAuditeur"),
+  metaDate: $("metaDate"),
+  metaZone: $("metaZone"),
+  bigScore: $("bigScore"),
+  bigStatus: $("bigStatus"),
+  bigDesc: $("bigDesc"),
+  scoreFill: $("scoreFill"),
+  ncList: $("ncList"),
+  ncBadge: $("ncBadge"),
+  toast: $("toast"),
+  toastIcon: $("toastIcon"),
+  toastTitle: $("toastTitle"),
+  toastMsg: $("toastMsg"),
+};
 
-        lignes.push({ id, critere: c, note, comment, photo });
-      });
+E.dateAudit.valueAsDate = new Date();
 
-      const pourcentage = max > 0 ? Math.round((total / max) * 100) : 0;
-      let niveau = 'Insuffisant', bg='linear-gradient(90deg, #ef4444, #dc2626)';
-      if (pourcentage >= 80) { niveau = 'Très bon'; bg='linear-gradient(90deg, var(--gxo-orange), var(--gxo-orange-700))'; }
-      else if (pourcentage >= 60) { niveau = 'Acceptable'; bg='linear-gradient(90deg, #fbbf24, #f59e0b)'; }
+/* ── TOAST ───────────────────────────────── */
+let toastTimer;
+function showToast(icon, title, msg, ms = 3500) {
+  E.toastIcon.textContent = icon;
+  E.toastTitle.textContent = title;
+  E.toastMsg.textContent = msg;
+  E.toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => E.toast.classList.remove("show"), ms);
+}
 
-      return {
-        auditeur, date, zone, lignes, total, max,
-        pourcentage, niveau, bg, incomplets, nNA, nBad, done, totalCriteres: criteres.length
-      };
-    }
+/* ── DATE ────────────────────────────────── */
+function formatFR(val) {
+  if (!val) return "—";
+  const d = new Date(val);
+  return isNaN(d) ? "—" : d.toLocaleDateString("fr-FR");
+}
 
-    function compute(){
-      const d = collectData();
+/* ── ZONE SELECT ─────────────────────────── */
+let currentZone = "";
 
-      // KPI top
-      const kpiDone = document.getElementById('kpi-done');
-      const kpiTotal = document.getElementById('kpi-total');
-      const kpiScore = document.getElementById('kpi-score');
-      const kpiNA = document.getElementById('kpi-na');
-      const kpiBad = document.getElementById('kpi-bad');
-      const bar = document.getElementById('kpi-bar');
-      const kpiLabel = document.getElementById('kpi-label');
+document.querySelectorAll(".zone-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    currentZone = btn.dataset.zone;
+    document.querySelectorAll(".zone-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    buildTable(currentZone);
+  });
+});
 
-      if (kpiDone){
-        kpiDone.textContent = d.done;
-        kpiTotal.textContent = d.totalCriteres;
-        kpiScore.textContent = d.pourcentage + '%';
-        kpiNA.textContent = d.nNA;
-        kpiBad.textContent = d.nBad;
-        const ratio = Math.round((d.done / d.totalCriteres) * 100) || 0;
-        bar.style.width = ratio + '%';
-        kpiLabel.textContent = `${d.done}/${d.totalCriteres} critères renseignés • Score actuel ${d.pourcentage}%`;
-      }
+function buildTable(zone) {
+  const list = ZONES[zone] || [];
+  E.badgeCount.textContent = list.length + (list.length > 1 ? " critères" : " critère");
+  E.checklistCount.textContent = list.length;
+  E.checklistCount.style.display = "inline-block";
+  E.checklistLabel.textContent = "Critères – Zone " + zone;
 
-      // Résultat (aperçu non bloquant)
-      const res = document.getElementById('resultat');
-      if (res){
-        res.style.background = d.bg;
-        res.innerHTML =
-          `Auditeur : ${d.auditeur || '—'}<br>` +
-          `Date : ${d.date || '—'}<br>` +
-          `Zone : ${d.zone || '—'}<br><br>` +
-          `Score : ${d.pourcentage}% – ${d.niveau}<br>` +
-          `NA : ${d.nNA} &nbsp;|&nbsp; Mauvais : ${d.nBad}` +
-          `<small>(Le score final est recalculé à l’identique au moment du PDF/CSV)</small>`;
-      }
-      return d;
-    }
+  if (!list.length) {
+    E.tableWrap.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span>Aucun critère pour cette zone.</div>';
+    return;
+  }
 
-    /* =============================
-       Validation + actions
-    ============================= */
-    function checkCommentsRequired(d){
-      for (const l of d.lignes){
-        if (l.note === "Mauvais" && !l.comment){
-          alert(`Merci d’ajouter un commentaire pour le critère : "${l.critere}" (note = Mauvais).`);
-          return false;
-        }
-      }
-      return true;
-    }
+  const table = document.createElement("table");
+  table.className = "audit-table";
+  table.innerHTML = `<thead><tr>
+    <th style="width:32%">Critère</th>
+    <th style="width:16%">Évaluation</th>
+    <th style="width:30%">Commentaire / action</th>
+    <th style="width:22%">Photo</th>
+  </tr></thead>`;
 
-    function calculer(){
-      const d = compute();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Merci de renseigner le nom de l’auditeur, la date et la zone."); return; }
-      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
-      if (!checkCommentsRequired(d)) return;
-      toast('✅ Score calculé et prêt pour export/PDF');
-    }
+  const tbody = document.createElement("tbody");
 
-    // PDF
-    async function genererPDF(){
-      const d = compute();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
-      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
-      if (!checkCommentsRequired(d)) return;
+  list.forEach((crit, i) => {
+    const tr = document.createElement("tr");
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'mm', format:'a4' });
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
+    // Critère
+    const tdC = document.createElement("td");
+    tdC.innerHTML = `<div class="crit-name">${i+1}. ${crit.libelle}</div><span class="crit-code">${crit.code}</span>`;
 
-      // En-tête
-      doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.setTextColor(255,58,0);
-      doc.text('Audit Propreté – GXO', pageW/2, 18, {align:'center'});
-      doc.setDrawColor(255,58,0); doc.setLineWidth(0.6);
-      doc.line(14, 22, pageW-14, 22);
+    // Note
+    const tdN = document.createElement("td");
+    const sel = document.createElement("select");
+    sel.className = "note-select";
+    sel.innerHTML = `<option value="">— Note —</option>
+      <option value="Bien">✅ Bien</option>
+      <option value="Moyen">⚠️ Moyen</option>
+      <option value="Mauvais">❌ Mauvais</option>
+      <option value="NA">— N/A</option>`;
+    sel.addEventListener("change", function() {
+      this.className = "note-select";
+      if (this.value === "Bien") this.classList.add("val-bien");
+      else if (this.value === "Moyen") this.classList.add("val-moyen");
+      else if (this.value === "Mauvais") this.classList.add("val-mauvais");
 
-      // Infos
-      doc.setFontSize(12); doc.setTextColor(20);
-      let y = 30;
-      doc.text(`Auditeur : ${d.auditeur}`, 14, y); y+=7;
-      doc.text(`Date     : ${d.date}`,   14, y); y+=7;
-      doc.text(`Zone     : ${d.zone}`,   14, y); y+=10;
-
-      // Résumé score
-      doc.setFillColor(255,58,0); doc.setTextColor(255);
-      doc.roundedRect(14, y-6, pageW-28, 12, 3,3, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(14);
-      doc.text(`Score : ${d.pourcentage}% – ${d.niveau}   |   NA : ${d.nNA}   |   Mauvais : ${d.nBad}`, pageW/2, y+2, {align:'center'});
-      y+=18;
-      doc.setTextColor(20); doc.setFont('helvetica','normal'); doc.setFontSize(12);
-
-      // Détails + photos
-      const left = 14, right = pageW - 14, imgMaxW = right-left, imgMaxH = 80;
-
-      d.lignes.forEach((l, i) => {
-        if (y > pageH - 30) { doc.addPage(); y = 20; }
-
-        doc.setFont('helvetica','bold');
-        doc.text(`${i+1}. ${l.critere}`, left, y); y+=6;
-
-        doc.setFont('helvetica','normal');
-        doc.text(`Évaluation : ${l.note || '-'}`, left, y);
-        if (l.comment) {
-          const lines = doc.splitTextToSize(`Commentaire : ${l.comment}`, imgMaxW);
-          doc.text(lines, left, y+6);
-          y += 6 + lines.length*6;
-        } else { y += 8; }
-
-        if (l.photo && l.photo.dataURL){
-          try{
-            const w = imgMaxW;
-            const h = Math.min(imgMaxH, w * 0.75);
-            if (y + h > pageH - 20) { doc.addPage(); y = 20; }
-            doc.addImage(l.photo.dataURL, 'JPEG', left, y, w, h);
-            y += h + 10;
-          }catch(e){
-            doc.setTextColor(200,0,0); doc.text('(Image non intégrée)', left, y); doc.setTextColor(20); y+=8;
-          }
-        }
-        y += 2;
-      });
-
-      doc.save(`Audit_GXO_${d.date}_${d.zone}.pdf`);
-      toast('📄 PDF généré');
-    }
-
-    // CSV
-    function exportCSV(){
-      const d = compute();
-      if (!d.auditeur || !d.date || !d.zone) { alert("Complète d’abord Auditeur / Date / Zone."); return; }
-      if (d.incomplets) { alert("Merci de remplir toutes les évaluations."); return; }
-      if (!checkCommentsRequired(d)) return;
-
-      const headers = [
-        'Auditeur','Date','Zone','Score(%)','Niveau','NA','Mauvais',
-        'Critère','Évaluation','Commentaire','Fichier'
-      ];
-      const rows = [];
-
-      for (const l of d.lignes){
-        const fileName = l.photo?.file?.name || '';
-        rows.push([
-          d.auditeur, d.date, d.zone, d.pourcentage, d.niveau, d.nNA, d.nBad,
-          l.critere, l.note || '', (l.comment || '').replace(/\r?\n/g,' '), fileName
-        ]);
-      }
-
-      let csv = headers.join(';') + '\n';
-      csv += rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(';')).join('\n');
-
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Audit_GXO_${d.date}_${d.zone}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
-      toast('📥 CSV exporté');
-    }
-
-    /* =============================
-       Sauvegarde locale (désactivable)
-    ============================= */
-    function saveLocal(){
-      if (isPrivate()) return; // En mode privé : ne rien stocker
-      const d = collectData();
-      // Ne pas stocker les dataURL d’images pour éviter de saturer le stockage.
-      const rows = d.lignes.map(({id, note, comment}) => ({id, note, comment}));
-      const payload = {
-        auditeur: d.auditeur, date: d.date, zone: d.zone, rows
-      };
-      localStorage.setItem(LS_KEY, JSON.stringify(payload));
-    }
-
-    let _saveTimer = null;
-    function saveLocalThrottled(){
-      if (isPrivate()) return; // pas de débounce si privé
-      clearTimeout(_saveTimer);
-      _saveTimer = setTimeout(saveLocal, 200);
-    }
-
-    function loadLocal(){
-      if (isPrivate()) return null; // en mode privé, on ignore toute donnée existante
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return null;
-      try { return JSON.parse(raw); } catch { return null; }
-    }
-
-    function clearAllData(){
-      // 1) Vider le stockage
-      localStorage.removeItem(LS_KEY);
-      // 2) Vider photos mémoire + inputs file + previews
-      photos.clear();
-      document.querySelectorAll('input[type="file"]').forEach(i => i.value = '');
-      document.querySelectorAll('.preview-wrap').forEach(w => w.innerHTML = '');
-      // 3) Réinitialiser champs
-      document.querySelectorAll('input[type="text"], textarea').forEach(i => i.value = '');
-      document.getElementById('dateAudit').value = new Date().toISOString().split('T')[0];
-      document.getElementById('zone').value = '';
-      // 4) Réinitialiser les sélections
-      document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
-      compute();
-      toast('♻️ Formulaire réinitialisé');
-    }
-
-    /* =============================
-       Utils (toast)
-    ============================= */
-    function toast(msg){
-      let el = document.querySelector('.toast');
-      if (!el){
-        el = document.createElement('div');
-        el.className = 'toast';
-        document.body.appendChild(el);
-      }
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 1600);
-    }
-
-    /* =============================
-       Init
-    ============================= */
-    document.addEventListener('DOMContentLoaded', () => {
-      ensureKPI();
-
-      // Préremplir la date si vide
-      const dateInput = document.getElementById('dateAudit');
-      if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-
-      // Par défaut : MODE PRIVÉ ACTIVÉ -> on n’essaye pas de charger
-      renderCriteres();
-
-      // Si l’utilisateur désactive le mode privé et qu’il existe des données, on les charge
-      privateModeEl.addEventListener('change', () => {
-        if (!isPrivate()){
-          const saved = loadLocal();
-          renderCriteres(saved || null);
-          // Restaurer en-tête si présent
-          const data = saved || {};
-          document.getElementById('auditeur').value = data.auditeur || '';
-          document.getElementById('dateAudit').value = data.date || new Date().toISOString().split('T')[0];
-          document.getElementById('zone').value = data.zone || '';
-          toast('💾 Restauration depuis cet appareil');
-        } else {
-          // Re-render propre sans données sauvegardées
-          renderCriteres(null);
-          toast('🛡️ Mode privé activé : rien n’est conservé');
-        }
-        compute();
-      });
-
-      // Boutons
-      document.getElementById('btnCalc').addEventListener('click', calculer);
-      document.getElementById('btnPdf').addEventListener('click', genererPDF);
-      document.getElementById('btnCsv').addEventListener('click', exportCSV);
-      document.getElementById('btnPrint').addEventListener('click', () => window.print());
-
-      document.getElementById('resetAll').addEventListener('click', () => {
-        if (confirm('Réinitialiser le formulaire et effacer les données locales ?')) {
-          clearAllData();
-        }
-      });
-
-      // Listeners haut de fiche
-      ['auditeur','dateAudit','zone'].forEach(id => {
-        const el = document.getElementById(id);
-        el.addEventListener('input', () => { compute(); saveLocalThrottled(); });
-        el.addEventListener('change', () => { compute(); saveLocalThrottled(); });
-      });
-
-      // Compute initial
-      compute();
+      tr.className = "";
+      if (this.value === "Bien") tr.classList.add("row-bien");
+      else if (this.value === "Moyen") tr.classList.add("row-moyen");
+      else if (this.value === "Mauvais") tr.classList.add("row-mauvais");
     });
-  </script>
+    tdN.appendChild(sel);
+
+    // Commentaire
+    const tdCm = document.createElement("td");
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "comment-input";
+    inp.placeholder = "Action corrective…";
+    tdCm.appendChild(inp);
+
+    // Photo
+    const tdP = document.createElement("td");
+    const dropZone = document.createElement("div");
+    dropZone.className = "photo-drop";
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+
+    const thumb = document.createElement("img");
+    thumb.className = "photo-thumb";
+
+    const label = document.createElement("div");
+    label.textContent = "📎 Photo";
+    label.style.fontFamily = "var(--font-mono)";
+    label.style.fontSize = "10px";
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          thumb.src = e.target.result;
+          thumb.classList.add("visible");
+          label.textContent = "✅ Photo";
+          dropZone.classList.add("has-photo");
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    });
+
+    dropZone.appendChild(fileInput);
+    dropZone.appendChild(thumb);
+    dropZone.appendChild(label);
+    tdP.appendChild(dropZone);
+
+    tr.appendChild(tdC);
+    tr.appendChild(tdN);
+    tr.appendChild(tdCm);
+    tr.appendChild(tdP);
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  E.tableWrap.innerHTML = "";
+  E.tableWrap.appendChild(table);
+}
+
+/* ── SCORE ───────────────────────────────── */
+window.auditData = null;
+
+function calculerScore() {
+  const auditeur = E.auditeur.value.trim();
+  const date = E.dateAudit.value;
+  const zone = currentZone;
+
+  if (!auditeur || !date || !zone) {
+    showToast("⚠️", "Champs manquants", "Remplis l'auditeur, la date et la zone.");
+    return;
+  }
+
+  const tbody = E.tableWrap.querySelector("tbody");
+  if (!tbody) { showToast("⚠️","Checklist vide","Sélectionne une zone d'abord."); return; }
+  const trs = tbody.querySelectorAll("tr");
+  if (!trs.length) return;
+
+  let total = 0, max = 0, nbNA = 0;
+  const nc = [];
+
+  trs.forEach(tr => {
+    const sel = tr.querySelector(".note-select");
+    const inp = tr.querySelector(".comment-input");
+    const title = tr.querySelector(".crit-name")?.textContent || "";
+    const code = tr.querySelector(".crit-code")?.textContent || "";
+    const val = sel?.value || "";
+    if (!val) return;
+    if (val === "NA") { nbNA++; return; }
+    max += 2;
+    total += SCORES[val] || 0;
+    if (val !== "Bien") {
+      nc.push({ title, code, comment: inp?.value.trim() || "—", gravite: val === "Mauvais" ? "maj" : "min" });
+    }
+  });
+
+  if (!max) { showToast("⚠️","Évaluation incomplète","Évalue au moins un critère."); return; }
+
+  const pct = Math.round((total / max) * 100);
+
+  // Meta
+  E.metaAuditeur.textContent = auditeur;
+  E.metaDate.textContent = formatFR(date);
+  E.metaZone.textContent = zone;
+
+  // ── NOUVEAUX SEUILS ──
+  // Bien (vert): >= 90
+  // Moyen (jaune): 70–89
+  // Mauvais (rouge): < 70
+  let cls, statusTxt, desc;
+  if (pct >= 90) {
+    cls = "green"; statusTxt = "BIEN"; desc = "Propreté maîtrisée — niveau conforme aux attentes.";
+  } else if (pct >= 70) {
+    cls = "yellow"; statusTxt = "MOYEN"; desc = "Propreté correcte mais des écarts restent à traiter.";
+  } else {
+    cls = "red"; statusTxt = "MAUVAIS"; desc = "Niveau insuffisant — plan d'action immédiat requis.";
+  }
+
+  // Affichages
+  E.bigScore.textContent = pct + "%";
+  E.bigScore.className = "score-big " + cls;
+  E.bigStatus.textContent = statusTxt;
+  E.bigStatus.className = "score-status-label " + cls;
+  E.bigDesc.textContent = desc;
+
+  setTimeout(() => { E.scoreFill.style.width = pct + "%"; }, 50);
+
+  E.chipScore.textContent = pct + "%";
+  const chipColors = { green:"var(--green)", yellow:"var(--yellow)", red:"var(--red)" };
+  E.chipStatus.textContent = statusTxt;
+  E.chipStatus.style.color = chipColors[cls];
+  E.chipDetail.textContent = `${trs.length} critères · ${nbNA} NA`;
+
+  // NC
+  E.ncBadge.textContent = nc.length;
+  E.ncList.innerHTML = "";
+  if (!nc.length) {
+    E.ncList.innerHTML = '<div class="nc-empty">✅ Aucune non-conformité détectée.</div>';
+  } else {
+    nc.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "nc-item " + item.gravite;
+      div.innerHTML = `
+        <div>
+          <div class="nc-item-title">${item.title}</div>
+          <div class="nc-item-comment">${item.comment}</div>
+          <div class="nc-item-code">${item.code}</div>
+        </div>
+        <div class="nc-tag ${item.gravite}">${item.gravite === "maj" ? "Majeure" : "Mineure"}</div>
+      `;
+      E.ncList.appendChild(div);
+    });
+  }
+
+  // Store
+  window.auditData = { auditeur, date: formatFR(date), zone, pct, statusTxt, cls, nbNA, nc, trs: Array.from(trs) };
+  E.btnMail.disabled = false;
+  showToast("📊", "Score calculé", `Zone ${zone} — ${pct}% (${statusTxt})`);
+}
+
+E.btnCalcul.addEventListener("click", calculerScore);
+
+/* ── PDF ─────────────────────────────────── */
+async function genererPdf() {
+  if (!window.auditData) { showToast("⚠️","Score manquant","Calcule d'abord le score."); return; }
+  showToast("⏳","Génération PDF","Préparation du rapport en cours…", 10000);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p","mm","a4");
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const m = 15;
+  let y = m;
+
+  const d = window.auditData;
+
+  // Header
+  doc.setFillColor(15,23,42); doc.rect(0,0,W,28,"F");
+  doc.setFillColor(255,40,0); doc.rect(0,25,W,3,"F");
+  doc.setTextColor(255,255,255);
+  doc.setFont(undefined,"bold"); doc.setFontSize(20); doc.text("RAPPORT D'AUDIT DE PROPRETÉ", m, 14);
+  doc.setFontSize(9); doc.setFont(undefined,"normal"); doc.setTextColor(150,160,170);
+  doc.text("GXO Logistics — Entrepôt", m, 20);
+  const dateStr = new Date().toLocaleDateString("fr-FR");
+  doc.text("Généré le " + dateStr, W-m, 20, {align:"right"});
+
+  y = 38;
+
+  // Meta
+  const metaItems = [["Auditeur",d.auditeur],["Date",d.date],["Zone",d.zone]];
+  doc.setFontSize(9);
+  metaItems.forEach(([k,v], i) => {
+    const x = m + i * ((W - 2*m + 4) / 3);
+    const bw = (W - 2*m - 8) / 3;
+    doc.setFillColor(245,246,247); doc.rect(x, y, bw, 12, "F");
+    doc.setTextColor(100); doc.setFont(undefined,"bold"); doc.text(k.toUpperCase(), x+3, y+4.5);
+    doc.setTextColor(30,30,30); doc.setFont(undefined,"bold"); doc.setFontSize(10); doc.text(v, x+3, y+10);
+    doc.setFontSize(9);
+  });
+  y += 18;
+
+  // Banner
+  const bannerColor = d.cls === "green" ? [16,185,129] : d.cls === "yellow" ? [245,158,11] : [255,40,0];
+  doc.setFillColor(...bannerColor); doc.rect(m, y, W-2*m, 18, "F");
+  doc.setTextColor(255,255,255); doc.setFont(undefined,"bold");
+  doc.setFontSize(22); doc.text(d.pct + "%", m+6, y+12);
+  doc.setFontSize(11); doc.text(d.statusTxt, m+40, y+12);
+  doc.setFont(undefined,"normal"); doc.setFontSize(9);
+  doc.text("Zone " + d.zone + " — Calculé sur " + d.trs.length + " critères", W-m-4, y+12, {align:"right"});
+  y += 24;
+
+  // Détail critères
+  doc.setTextColor(15,23,42); doc.setFont(undefined,"bold"); doc.setFontSize(12);
+  doc.text("Détail des critères d'évaluation", m, y); y += 8;
+
+  let n = 1;
+  for (const tr of d.trs) {
+    if (y > H - 40) { doc.addPage(); y = m; }
+    const sel = tr.querySelector(".note-select");
+    const inp = tr.querySelector(".comment-input");
+    const title = tr.querySelector(".crit-name")?.textContent || "";
+    const code = tr.querySelector(".crit-code")?.textContent || "";
+    const val = sel?.value || "";
+    const comment = inp?.value.trim() || "Aucun commentaire";
+    if (!val || val === "NA") continue;
+
+    const bg = val === "Bien" ? [236,253,245] : val === "Moyen" ? [255,251,235] : [254,242,242];
+    const border = val === "Bien" ? [16,185,129] : val === "Moyen" ? [245,158,11] : [239,68,68];
+
+    doc.setFillColor(...bg);
+    const blockH = 20;
+    doc.rect(m, y, W-2*m, blockH, "F");
+    doc.setFillColor(...border);
+    doc.rect(m, y, 3, blockH, "F");
+
+    doc.setTextColor(15,23,42); doc.setFont(undefined,"bold"); doc.setFontSize(10);
+    doc.text(`${n}. ${title}`, m+6, y+6);
+
+    doc.setFont(undefined,"normal"); doc.setFontSize(8); doc.setTextColor(100);
+    doc.text(code, m+6, y+11);
+
+    doc.setFont(undefined,"bold"); doc.setFontSize(9); doc.setTextColor(...border);
+    doc.text("▶ " + val.toUpperCase(), W-m-50, y+6);
+
+    doc.setFont(undefined,"normal"); doc.setTextColor(80); doc.setFontSize(8);
+    const lines = doc.splitTextToSize(comment, W-2*m-60);
+    doc.text(lines, m+6, y+16);
+
+    const fileInput = tr.querySelector("input[type='file']");
+    if (fileInput?.files?.length) {
+      const imgData = await new Promise(res => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.readAsDataURL(fileInput.files[0]);
+      });
+      if (y + blockH + 42 > H - 20) { doc.addPage(); y = m; }
+      y += blockH + 3;
+      doc.addImage(imgData, "JPEG", m+6, y, 50, 38);
+      doc.setFontSize(7); doc.setTextColor(120);
+      doc.text("Photo : " + fileInput.files[0].name, m+60, y+4);
+      y += 40;
+    } else {
+      y += blockH + 4;
+    }
+    n++;
+  }
+
+  // NC
+  if (d.nc.length && y + 30 < H - 20) {
+    y += 6;
+    if (y > H - 50) { doc.addPage(); y = m; }
+    doc.setFont(undefined,"bold"); doc.setFontSize(11); doc.setTextColor(15,23,42);
+    doc.text("Non-conformités détectées (" + d.nc.length + ")", m, y);
+    y += 6;
+    d.nc.forEach(item => {
+      if (y > H - 20) { doc.addPage(); y = m; }
+      doc.setFillColor(item.gravite === "maj" ? 254 : 255, item.gravite === "maj" ? 242 : 251, item.gravite === "maj" ? 242 : 235);
+      doc.rect(m, y, W-2*m, 14, "F");
+      doc.setFont(undefined,"bold"); doc.setFontSize(9); doc.setTextColor(30);
+      doc.text(item.title, m+3, y+5);
+      doc.setFont(undefined,"normal"); doc.setFontSize(8); doc.setTextColor(80);
+      doc.text(item.comment, m+3, y+10);
+      doc.setFont(undefined,"bold");
+      doc.setTextColor(item.gravite === "maj" ? 185 : 180, item.gravite === "maj" ? 28 : 120, item.gravite === "maj" ? 28 : 10);
+      doc.text(item.gravite === "maj" ? "MAJEURE" : "MINEURE", W-m-3, y+5, {align:"right"});
+      y += 16;
+    });
+  }
+
+  // Footer
+  doc.setFontSize(7); doc.setTextColor(160);
+  doc.text("Rapport généré automatiquement — GXO Audit Propreté Entrepôt", m, H-6);
+  doc.text("Confidentiel — Usage interne QSE uniquement", W-m, H-6, {align:"right"});
+
+  doc.save("Audit_Proprete_GXO_" + d.zone + ".pdf");
+
+  const pdfBlob = doc.output("blob");
+  window.pdfBlob = pdfBlob;
+  window.pdfBase64 = await blobToBase64(pdfBlob);
+  showToast("🖨️", "PDF généré", `Rapport Zone ${d.zone} téléchargé avec succès.`);
+}
+
+function blobToBase64(blob) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onloadend = () => res(r.result);
+    r.readAsDataURL(blob);
+  });
+}
+
+E.btnPdf.addEventListener("click", genererPdf);
+
+/* ── MAIL ───────────────────────────────── */
+E.btnMail.addEventListener("click", async () => {
+  if (!window.pdfBlob) { showToast("⚠️","PDF manquant","Génère d'abord le PDF avant d'envoyer."); return; }
+  const d = window.auditData;
+  const dest = prompt("Adresse email du destinataire :", "manager@gxo.com");
+  if (!dest) return;
+
+  const sujet = encodeURIComponent(`Audit propreté ${d.zone} – ${d.pct}% (${d.statusTxt})`);
+  const corps = encodeURIComponent(
+`Bonjour,
+
+Veuillez trouver ci-joint le rapport d'audit de propreté complet.
+
+══════════════════════════
+📊 SYNTHÈSE AUDIT
+══════════════════════════
+
+Zone auditée : ${d.zone}
+Date : ${d.date}
+Auditeur : ${d.auditeur}
+Score global : ${d.pct}% — ${d.statusTxt}
+Non-conformités : ${d.nc.length}
+
+══════════════════════════
+
+Le document PDF contient :
+✓ Détail de chaque critère évalué
+✓ Commentaires et actions correctives
+✓ Photos des zones auditées
+
+Merci de prendre connaissance du rapport et de mettre en œuvre les actions correctives si nécessaire.
+
+Cordialement,
+${d.auditeur}`
+  );
+
+  window.location.href = `mailto:${dest}?subject=${sujet}&body=${corps}`;
+  showToast("✉️", "Mail ouvert", "Joint le PDF téléchargé à votre message.");
+});
+
+/* ── RESET ──────────────────────────────── */
+E.btnReset.addEventListener("click", () => {
+  if (!confirm("Réinitialiser complètement l'audit ?")) return;
+
+  E.auditeur.value = "";
+  E.dateAudit.valueAsDate = new Date();
+  currentZone = "";
+  document.querySelectorAll(".zone-btn").forEach(b => b.classList.remove("active"));
+  E.tableWrap.innerHTML = `<div class="empty-state"><span class="empty-icon">🏭</span>Aucune zone sélectionnée<br/>Clique sur une zone pour commencer l'audit.</div>`;
+  E.checklistCount.style.display = "none";
+  E.checklistLabel.textContent = "Sélectionne une zone pour charger les critères";
+  E.badgeCount.textContent = "0 critère";
+
+  E.metaAuditeur.textContent = "—";
+  E.metaDate.textContent = "—";
+  E.metaZone.textContent = "—";
+
+  E.bigScore.textContent = "--%";
+  E.bigScore.className = "score-big";
+  E.bigStatus.textContent = "En attente d'évaluation";
+  E.bigStatus.className = "score-status-label";
+  E.bigDesc.textContent = "Lance le calcul pour afficher le résultat de l'audit.";
+  E.scoreFill.style.width = "0%";
+
+  E.chipScore.textContent = "--%";
+  E.chipStatus.textContent = "En attente";
+  E.chipStatus.style.color = "var(--text-muted)";
+  E.chipDetail.textContent = "Aucun calcul";
+
+  E.ncList.innerHTML = '<div class="nc-empty">Aucune non‑conformité.<br/>Lance le calcul pour analyser.</div>';
+  E.ncBadge.textContent = "0";
+  E.btnMail.disabled = true;
+
+  window.auditData = null;
+  window.pdfBlob = null;
+  showToast("🔄", "Réinitialisé", "L'audit a été remis à zéro.");
+});
+</script>
 </body>
 </html>
