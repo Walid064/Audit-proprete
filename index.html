@@ -205,7 +205,6 @@
     .score-bar-track{ width:100%; height:4px; background:var(--surface-3); border-radius:999px; overflow:visible; position:relative; }
     .score-bar-fill{ height:100%; border-radius:999px; background: linear-gradient(90deg, var(--red), var(--yellow), var(--green)); width:0%; transition: width .8s cubic-bezier(.4,0,.2,1); position:relative; }
     .score-bar-fill::after{ content:''; position:absolute; right:-4px; top:-4px; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 0 10px rgba(255,255,255,0.5); border:2px solid var(--surface); }
-
     .score-bar-labels{ display:flex; justify-content:space-between; margin-top:6px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); }
 
     /* NC LIST */
@@ -417,7 +416,7 @@
 
 <script>
 /* ── DATA ───────────────────────────────── */
-/* Ordres & libellés épurés : suppression de "Zone (de)" et E‑commerce → E‑com */
+/* Libellés épurés : suppression de "Zone (de)" + pas de "(E‑com)" dans ECOM_PLV */
 const ZONES = {
   ND4: [
     { code:"ND4_DECH",     libelle:"Déchargement" },
@@ -449,12 +448,12 @@ const ZONES = {
     { code:"RIU_BUR_CE",   libelle:"Bureau CE" }
   ],
   ECOM_PLV: [
-    { code:"ECOM_PLV_PREM_TRI", libelle:"Premier tri (E‑com)" },
-    { code:"ECOM_PLV_COLISAGE", libelle:"Colisage (E‑com)" },
-    { code:"ECOM_PLV_EXP",      libelle:"Expédition (E‑com)" },
-    { code:"ECOM_PLV_CONSO_PLV",libelle:"Conso & PLV (E‑com)" },
-    { code:"ECOM_PLV_EVAC_DECH",libelle:"Évacuation déchets (E‑com)" },
-    { code:"ECOM_PLV_BUR_CE",   libelle:"Bureau CE (E‑com)" }
+    { code:"ECOM_PLV_PREM_TRI",  libelle:"Premier tri" },
+    { code:"ECOM_PLV_COLISAGE",  libelle:"Colisage" },
+    { code:"ECOM_PLV_EXP",       libelle:"Expédition" },
+    { code:"ECOM_PLV_CONSO_PLV", libelle:"Conso & PLV" },
+    { code:"ECOM_PLV_EVAC_DECH", libelle:"Évacuation déchets" },
+    { code:"ECOM_PLV_BUR_CE",    libelle:"Bureau CE" }
   ],
   ND3: [
     { code:"ND3_DECH",     libelle:"Déchargement" },
