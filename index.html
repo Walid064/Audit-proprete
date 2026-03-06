@@ -205,6 +205,7 @@
     .score-bar-track{ width:100%; height:4px; background:var(--surface-3); border-radius:999px; overflow:visible; position:relative; }
     .score-bar-fill{ height:100%; border-radius:999px; background: linear-gradient(90deg, var(--red), var(--yellow), var(--green)); width:0%; transition: width .8s cubic-bezier(.4,0,.2,1); position:relative; }
     .score-bar-fill::after{ content:''; position:absolute; right:-4px; top:-4px; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 0 10px rgba(255,255,255,0.5); border:2px solid var(--surface); }
+
     .score-bar-labels{ display:flex; justify-content:space-between; margin-top:6px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); }
 
     /* NC LIST */
@@ -416,53 +417,53 @@
 
 <script>
 /* ── DATA ───────────────────────────────── */
-/* Ordres & libellés corrigés, avec majuscule initiale et accents */
+/* Ordres & libellés épurés : suppression de "Zone (de)" et E‑commerce → E‑com */
 const ZONES = {
   ND4: [
-    { code:"ND4_DECH",     libelle:"Zone de Déchargement" },
-    { code:"ND4_SPACE",    libelle:"Zone de Space" },
-    { code:"ND4_TRIEUR",   libelle:"Zone Trieur" },
-    { code:"ND4_TK",       libelle:"Zone TK" },
-    { code:"ND4_DALLE",    libelle:"Zone de Dalle" },
-    { code:"ND4_M1",       libelle:"Zone Mezzanine 1" },
-    { code:"ND4_M2",       libelle:"Zone Mezzanine 2" },
-    { code:"ND4_BUR_CE",   libelle:"Zone Bureau CE" }
+    { code:"ND4_DECH",     libelle:"Déchargement" },
+    { code:"ND4_SPACE",    libelle:"Space" },
+    { code:"ND4_TRIEUR",   libelle:"Trieur" },
+    { code:"ND4_TK",       libelle:"TK" },
+    { code:"ND4_DALLE",    libelle:"Dalle" },
+    { code:"ND4_M1",       libelle:"Mezzanine 1" },
+    { code:"ND4_M2",       libelle:"Mezzanine 2" },
+    { code:"ND4_BUR_CE",   libelle:"Bureau CE" }
   ],
   CD5: [
-    { code:"CD5_DECH",     libelle:"Zone de Déchargement" },
-    { code:"CD5_CTRL_DET", libelle:"Zone de Contrôle Détail" },
-    { code:"CD5_BS",       libelle:"Zone BS" },
-    { code:"CD5_RACK",     libelle:"Zone Rack" },
-    { code:"CD5_TRIEUR",   libelle:"Zone Trieur" },
-    { code:"CD5_M1",       libelle:"Zone Mezzanine 1" },
-    { code:"CD5_M2",       libelle:"Zone Mezzanine 2" },
-    { code:"CD5_EXP",      libelle:"Zone d'Expédition" },
-    { code:"CD5_BUR_CE",   libelle:"Zone Bureau CE" },
-    { code:"CD5_BUR_QUAL", libelle:"Zone Bureau Qualité" }
+    { code:"CD5_DECH",     libelle:"Déchargement" },
+    { code:"CD5_CTRL_DET", libelle:"Contrôle Détail" },
+    { code:"CD5_BS",       libelle:"BS" },
+    { code:"CD5_RACK",     libelle:"Rack" },
+    { code:"CD5_TRIEUR",   libelle:"Trieur" },
+    { code:"CD5_M1",       libelle:"Mezzanine 1" },
+    { code:"CD5_M2",       libelle:"Mezzanine 2" },
+    { code:"CD5_EXP",      libelle:"Expédition" },
+    { code:"CD5_BUR_CE",   libelle:"Bureau CE" },
+    { code:"CD5_BUR_QUAL", libelle:"Bureau Qualité" }
   ],
   RIU: [
-    { code:"RIU_RECEPT",   libelle:"Zone de Réception" },
-    { code:"RIU_PREP",     libelle:"Zone de Préparation" },
-    { code:"RIU_EXP",      libelle:"Zone d'Expédition" },
-    { code:"RIU_RACK",     libelle:"Zone Rack" },
-    { code:"RIU_BUR_CE",   libelle:"Zone Bureau CE" }
+    { code:"RIU_RECEPT",   libelle:"Réception" },
+    { code:"RIU_PREP",     libelle:"Préparation" },
+    { code:"RIU_EXP",      libelle:"Expédition" },
+    { code:"RIU_RACK",     libelle:"Rack" },
+    { code:"RIU_BUR_CE",   libelle:"Bureau CE" }
   ],
   ECOM_PLV: [
-    { code:"ECOM_PLV_PREM_TRI", libelle:"Zone de Premier Tri" },
-    { code:"ECOM_PLV_COLISAGE", libelle:"Zone de Colisage" },
-    { code:"ECOM_PLV_EXP",      libelle:"Zone d'Expédition" },
-    { code:"ECOM_PLV_CONSO_PLV",libelle:"Zone de Conso & PLV" },
-    { code:"ECOM_PLV_EVAC_DECH",libelle:"Zone d'Évacuation des Déchets" },
-    { code:"ECOM_PLV_BUR_CE",   libelle:"Zone Bureau CE" }
+    { code:"ECOM_PLV_PREM_TRI", libelle:"Premier tri (E‑com)" },
+    { code:"ECOM_PLV_COLISAGE", libelle:"Colisage (E‑com)" },
+    { code:"ECOM_PLV_EXP",      libelle:"Expédition (E‑com)" },
+    { code:"ECOM_PLV_CONSO_PLV",libelle:"Conso & PLV (E‑com)" },
+    { code:"ECOM_PLV_EVAC_DECH",libelle:"Évacuation déchets (E‑com)" },
+    { code:"ECOM_PLV_BUR_CE",   libelle:"Bureau CE (E‑com)" }
   ],
   ND3: [
-    { code:"ND3_DECH",     libelle:"Zone de Déchargement" },
-    { code:"ND3_DALLE",    libelle:"Zone de Dalle" },
-    { code:"ND3_M1",       libelle:"Zone Mezzanine 1" },
-    { code:"ND3_M2",       libelle:"Zone Mezzanine 2" },
-    { code:"ND3_TRIEUR",   libelle:"Zone Trieur et Buffer" },
-    { code:"ND3_EXP",      libelle:"Zone d'Expédition" },
-    { code:"ND3_BUR_CE",   libelle:"Zone Bureau CE" }
+    { code:"ND3_DECH",     libelle:"Déchargement" },
+    { code:"ND3_DALLE",    libelle:"Dalle" },
+    { code:"ND3_M1",       libelle:"Mezzanine 1" },
+    { code:"ND3_M2",       libelle:"Mezzanine 2" },
+    { code:"ND3_TRIEUR",   libelle:"Trieur & Buffer" },
+    { code:"ND3_EXP",      libelle:"Expédition" },
+    { code:"ND3_BUR_CE",   libelle:"Bureau CE" }
   ]
 };
 
