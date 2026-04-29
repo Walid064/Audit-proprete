@@ -447,7 +447,6 @@
 
 <script>
 /* ── DATA ───────────────────────────────── */
-/* Libellés épurés : suppression de "Zone (de)" + pas de "(E‑com)" dans ECOM_PLV */
 const ZONES = {
   ND4: [
     { code:"ND4_DECH",     libelle:"Déchargement" },
@@ -498,6 +497,9 @@ const ZONES = {
 };
 
 const SCORES = { "Bien":2, "Moyen":1, "Mauvais":0 };
+
+/* Pourcentage par note (sur 100%) */
+const NOTE_PCT = { "Bien": 100, "Moyen": 50, "Mauvais": 0 };
 
 /* ── ELEMENTS ───────────────────────────── */
 const $ = id => document.getElementById(id);
@@ -848,8 +850,12 @@ async function genererPdf() {
     const comment = inp?.value.trim() || "Aucun commentaire";
     if (!val || val === "NA") continue;
 
-    const bg = val === "Bien" ? [236,253,245] : val === "Moyen" ? [255,251,235] : [254,242,242];
-    const border = val === "Bien" ? [16,185,129] : val === "Moyen" ? [245,158,11] : [239,68,68];
+    /* ── COULEURS PAR NOTE ── */
+    const bg     = val === "Bien" ? [236,253,245] : val === "Moyen" ? [255,251,235] : [254,242,242];
+    const border = val === "Bien" ? [16,185,129]  : val === "Moyen" ? [245,158,11]  : [239,68,68];
+
+    /* Pourcentage individuel du critère */
+    const critPct = NOTE_PCT[val]; // 100, 50 ou 0
 
     doc.setFillColor(...bg);
     const blockH = 20;
@@ -857,19 +863,24 @@ async function genererPdf() {
     doc.setFillColor(...border);
     doc.rect(m, y, 3, blockH, "F");
 
+    /* Titre du critère */
     doc.setTextColor(15,23,42); doc.setFont(undefined,"bold"); doc.setFontSize(10);
     doc.text(`${n}. ${title}`, m+6, y+6);
 
+    /* Code sous le titre */
     doc.setFont(undefined,"normal"); doc.setFontSize(8); doc.setTextColor(100);
     doc.text(code, m+6, y+11);
 
+    /* Note (ex: BIEN) + pourcentage du critère sur la droite */
     doc.setFont(undefined,"bold"); doc.setFontSize(9); doc.setTextColor(...border);
-    doc.text("▶ " + val.toUpperCase(), W-m-50, y+6);
+    doc.text(`${val.toUpperCase()} — ${critPct}%`, W-m-4, y+6, {align:"right"});
 
+    /* Commentaire */
     doc.setFont(undefined,"normal"); doc.setTextColor(80); doc.setFontSize(8);
     const lines = doc.splitTextToSize(comment, W-2*m-60);
     doc.text(lines, m+6, y+16);
 
+    /* Photo éventuelle */
     const fileInput = tr.querySelector("input[type='file']");
     if (fileInput?.files?.length) {
       const imgData = await new Promise(res => {
@@ -970,7 +981,6 @@ Cordialement,
 ${d.auditeur}`
   );
 
-  // Ouvre le client mail (le PDF est dans Téléchargements, à joindre manuellement sur mobile)
   window.location.href = `mailto:${dest}?subject=${sujet}&body=${corps}`;
   showToast("✉️", "Mail ouvert", "Joint le PDF téléchargé à votre message.");
 });
@@ -980,7 +990,6 @@ E.btnReset.addEventListener("click", () => {
   if (!confirm("Réinitialiser complètement l'audit ?")) return;
 
   E.auditeur.value = "";
-  // reset date (avec fallback)
   (function setDateToday(){
     try{
       const today = new Date();
